@@ -1,0 +1,9 @@
+@font-face { font-family: 'Inkpage Roman'; src: url('./fonts/lmroman10-regular.otf') format('opentype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Inkpage Roman'; src: url('./fonts/lmroman10-bold.otf') format('opentype'); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Inkpage Roman'; src: url('./fonts/lmroman10-italic.otf') format('opentype'); font-weight: 400; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Inkpage Roman'; src: url('./fonts/lmroman10-bolditalic.otf') format('opentype'); font-weight: 700; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Inkpage WenKai'; src: url('./fonts/LXGWWenKaiGB-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Inkpage Sans'; src: url('./fonts/NotoSans-VariableFont_wdth,wght.ttf') format('truetype'); font-weight: 100 900; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Inkpage Mono'; src: url('./fonts/Inconsolata-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Inkpage Mono'; src: url('./fonts/Inconsolata-Bold.ttf') format('truetype'); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Inkpage CJK Sans'; src: url('./fonts/SarasaFixedSC-Regular.ttf') format('truetype'); font-weight: 400; font-style: normal; font-display: swap; }

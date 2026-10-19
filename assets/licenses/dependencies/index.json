@@ -1,0 +1,147 @@
+[
+  {
+    "package": "deepmerge@4.3.1",
+    "license": "MIT",
+    "notice": "assets/licenses/dependencies/deepmerge_4.3.1.txt"
+  },
+  {
+    "package": "dom-serializer@2.0.0",
+    "license": "MIT",
+    "notice": "assets/licenses/dependencies/dom-serializer_2.0.0.txt"
+  },
+  {
+    "package": "domelementtype@2.3.0",
+    "license": "BSD-2-Clause",
+    "notice": "assets/licenses/dependencies/domelementtype_2.3.0.txt"
+  },
+  {
+    "package": "domhandler@5.0.3",
+    "license": "BSD-2-Clause",
+    "notice": "assets/licenses/dependencies/domhandler_5.0.3.txt"
+  },
+  {
+    "package": "domutils@3.2.2",
+    "license": "BSD-2-Clause",
+    "notice": "assets/licenses/dependencies/domutils_3.2.2.txt"
+  },
+  {
+    "package": "entities@4.5.0",
+    "license": "BSD-2-Clause",
+    "notice": "assets/licenses/dependencies/entities_4.5.0.txt"
+  },
+  {
+    "package": "entities@7.0.1",
+    "license": "BSD-2-Clause",
+    "notice": "assets/licenses/dependencies/entities_7.0.1.txt"
+  },
+  {
+    "package": "escape-string-regexp@4.0.0",
+    "license": "MIT",
+    "notice": "assets/licenses/dependencies/escape-string-regexp_4.0.0.txt"
+  },
+  {
+    "package": "highlight.js@11.11.1",
+    "license": "BSD-3-Clause",
+    "notice": "assets/licenses/dependencies/highlight.js_11.11.1.txt"
+  },
+  {
+    "package": "htmlparser2@10.1.0",
+    "license": "MIT",
+    "notice": "assets/licenses/dependencies/htmlparser2_10.1.0.txt"
+  },
+  {
+    "package": "htmlparser2@8.0.2",
+    "license": "MIT",
+    "notice": "assets/licenses/dependencies/htmlparser2_8.0.2.txt"
+  },
+  {
+    "package": "is-plain-object@5.1.0",
+    "license": "MIT",
+    "notice": "assets/licenses/dependencies/is-plain-object_5.1.0.txt"
+  },
+  {
+    "package": "js-yaml@4.1.1",
+    "license": "MIT",
+    "notice": "assets/licenses/dependencies/js-yaml_4.1.1.txt"
+  },
+  {
+    "package": "katex@0.19.0",
+    "license": "MIT",
+    "notice": "assets/licenses/dependencies/katex_0.19.0.txt"
+  },
+  {
+    "package": "linkify-it@5.0.2",
+    "license": "MIT",
+    "notice": "assets/licenses/dependencies/linkify-it_5.0.2.txt"
+  },
+  {
+    "package": "markdown-it-footnote@4.0.0",
+    "license": "MIT",
+    "notice": "assets/licenses/dependencies/markdown-it-footnote_4.0.0.txt"
+  },
+  {
+    "package": "markdown-it-task-lists@2.1.1",
+    "license": "ISC",
+    "notice": "assets/licenses/dependencies/markdown-it-task-lists_2.1.1.txt"
+  },
+  {
+    "package": "markdown-it-texmath@1.0.0",
+    "license": "MIT",
+    "notice": "assets/licenses/dependencies/markdown-it-texmath_1.0.0.txt"
+  },
+  {
+    "package": "markdown-it@14.1.1",
+    "license": "MIT",
+    "notice": "assets/licenses/dependencies/markdown-it_14.1.1.txt"
+  },
+  {
+    "package": "mdurl@2.1.0",
+    "license": "MIT",
+    "notice": "assets/licenses/dependencies/mdurl_2.1.0.txt"
+  },
+  {
+    "package": "nanoid@3.3.20",
+    "license": "MIT",
+    "notice": "assets/licenses/dependencies/nanoid_3.3.20.txt"
+  },
+  {
+    "package": "parse-srcset@1.0.2",
+    "license": "MIT",
+    "notice": "assets/licenses/dependencies/parse-srcset_1.0.2.txt"
+  },
+  {
+    "package": "picocolors@1.1.1",
+    "license": "ISC",
+    "notice": "assets/licenses/dependencies/picocolors_1.1.1.txt"
+  },
+  {
+    "package": "postcss@8.5.30",
+    "license": "MIT",
+    "notice": "assets/licenses/dependencies/postcss_8.5.30.txt"
+  },
+  {
+    "package": "punycode.js@2.3.1",
+    "license": "MIT",
+    "notice": "assets/licenses/dependencies/punycode.js_2.3.1.txt"
+  },
+  {
+    "package": "sanitize-html@2.17.0",
+    "license": "MIT",
+    "notice": "assets/licenses/dependencies/sanitize-html_2.17.0.txt"
+  },
+  {
+    "package": "source-map-js@1.2.2",
+    "license": "BSD-3-Clause",
+    "notice": "assets/licenses/dependencies/source-map-js_1.2.2.txt"
+  },
+  {
+    "package": "uc.micro@2.1.0",
+    "license": "MIT",
+    "notice": "assets/licenses/dependencies/uc.micro_2.1.0.txt"
+  },
+  {
+    "package": "ws@8.18.3",
+    "license": "MIT",
+    "notice": "assets/licenses/dependencies/ws_8.18.3.txt"
+  }
+]

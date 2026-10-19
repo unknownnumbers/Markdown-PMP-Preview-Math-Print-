@@ -1,0 +1,165 @@
+/* Scoped preview rules: Default never emits this marker. */
+@scope (html:has(.inkpage-theme-marker)) {
+/* The same rules are used by VS Code's native preview, standalone HTML, and PDF. */
+:scope {
+  color-scheme: light;
+  --inkpage-title: #8064a9;
+  --inkpage-link: #4657a1;
+  --inkpage-link-hover: #35427a;
+  --inkpage-link-weight: 400;
+  --inkpage-link-line: 1px;
+  --inkpage-accent: #8064a9;
+  --inkpage-code: #745fb5;
+  --inkpage-code-bg: #f4f2f9;
+  --inkpage-tint: #f7f4fa;
+  --inkpage-quote-bg: #f7f4fa;
+  --inkpage-quote-line: #b9a8d0;
+  --inkpage-code-block: #f7f7f9;
+  --inkpage-border: #e5dfec;
+  --inkpage-string: #8d4b68;
+  --inkpage-function: #53649b;
+  --inkpage-keyword: #8064a9;
+  --inkpage-font-size: 23px;
+  --inkpage-line-height: 1.7;
+  --inkpage-max-width: 900px;
+  --inkpage-pdf-font-size: 12pt;
+  --inkpage-body-font: 'Inkpage Roman', 'Inkpage WenKai', 'KaiTi', serif;
+  --inkpage-heading-font: 'Inkpage Sans', 'Inkpage CJK Sans', 'Microsoft YaHei', sans-serif;
+  --inkpage-code-font: 'Inkpage Mono', 'Inkpage CJK Sans', 'Consolas', monospace;
+}
+:scope { padding: 0; margin: 0; background: #fff; }
+:scope body {
+  box-sizing: border-box;
+  max-width: var(--inkpage-max-width);
+  margin: 0 auto;
+  padding: 32px 34px;
+  font-family: var(--inkpage-body-font);
+  font-size: var(--inkpage-font-size);
+  line-height: var(--inkpage-line-height);
+  font-weight: 400;
+  color: #444;
+  background: #fff;
+  overflow-wrap: anywhere;
+  -webkit-text-size-adjust: 100%;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+body .markdown-body { color: inherit; font: inherit; }
+body .markdown-body *, body .markdown-body *::before, body .markdown-body *::after { box-sizing: border-box; }
+body .markdown-body :is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--inkpage-heading-font);
+  color: var(--inkpage-title);
+  font-weight: 400;
+  line-height: 1.45;
+  letter-spacing: 0;
+  padding: 0;
+  border: 0;
+  text-wrap: pretty;
+  scroll-margin-top: 20px;
+}
+body .markdown-body h1 { font-size: 1.478261em; text-align: center; margin: 1.2em 0 .8em; }
+body .markdown-body h1:first-child { margin-top: 0; }
+body .markdown-body h1::after {
+  content: ''; display: block; width: 4.173913em; max-width: 35%; height: 2px;
+  background: var(--inkpage-accent); margin: 13px auto 0; font-size: var(--inkpage-font-size);
+}
+body .markdown-body h2 { font-size: 1.173913em; border-left: 6px solid var(--inkpage-accent); padding-left: 12px; margin: 26px 0 15px; }
+body .markdown-body h3 { font-size: 1.043478em; margin: 24px 0 12px; }
+body .markdown-body :is(h4, h5, h6) { margin: 20px 0 8px; font-weight: 500; }
+body .markdown-body h4 { font-size: .956522em; }
+body .markdown-body h5 { font-size: .869565em; }
+body .markdown-body h6 { font-size: .782609em; }
+body .markdown-body p { margin: 16px 0; }
+body .markdown-body a, body .markdown-body a:visited {
+  color: var(--inkpage-link);
+  font-family: inherit; font-weight: var(--inkpage-link-weight);
+  text-decoration: underline;
+  text-decoration-color: currentColor;
+  text-decoration-thickness: var(--inkpage-link-line);
+  text-underline-offset: .17em;
+  border: 0; background: transparent;
+}
+body .markdown-body a:hover { color: var(--inkpage-link-hover); text-decoration-thickness: 2px; }
+body .markdown-body a:focus-visible { outline: 2px solid var(--inkpage-link); outline-offset: 3px; border-radius: 2px; }
+body .markdown-body :is(h1, h2, h3, h4, h5, h6) a { font-weight: inherit; }
+body .markdown-body strong { font-weight: 700; }
+body .markdown-body code, body .markdown-body tt {
+  font-family: var(--inkpage-code-font); font-size: .9em; line-height: inherit;
+  color: var(--inkpage-code); background: var(--inkpage-code-bg);
+  border: 0; border-radius: 5px; padding: 2px 5px;
+  white-space: break-spaces; overflow-wrap: anywhere;
+}
+body .markdown-body :is(h1, h2, h3, h4, h5, h6) code { font-size: .9em; }
+body .markdown-body pre, body .markdown-body pre:not(.hljs), body.wordWrap .markdown-body pre {
+  font-family: var(--inkpage-code-font); font-size: .826087em; line-height: 1.6;
+  color: #444; background: var(--inkpage-code-block);
+  padding: 17px 19px; margin: 16px 0 23px;
+  border: 1px solid var(--inkpage-border); border-radius: 5px;
+  white-space: pre-wrap; overflow-wrap: anywhere; overflow: auto;
+}
+body .markdown-body pre code, body .markdown-body pre.hljs code > div {
+  display: block; font: inherit; color: inherit; background: transparent;
+  border: 0; border-radius: 0; padding: 0; margin: 0;
+  white-space: inherit; overflow-wrap: inherit; tab-size: 4;
+}
+body .markdown-body :is(.hljs-keyword, .hljs-literal, .hljs-symbol, .hljs-name, .hljs-selector-tag) { color: var(--inkpage-keyword); }
+body .markdown-body :is(.hljs-string, .hljs-meta-string, .hljs-regexp, .hljs-template-tag, .hljs-addition) { color: var(--inkpage-string); }
+body .markdown-body :is(.hljs-title, .hljs-title.function_, .hljs-built_in, .hljs-type, .hljs-class, .hljs-attribute, .hljs-attr, .hljs-selector-class, .hljs-selector-id) { color: var(--inkpage-function); }
+body .markdown-body :is(.hljs-number, .hljs-deletion) { color: var(--inkpage-string); }
+body .markdown-body :is(.hljs-subst, .hljs-params, .hljs-punctuation, .hljs-operator, .hljs-variable, .hljs-function, .hljs-formula) { color: #444; }
+body .markdown-body :is(.hljs-comment, .hljs-quote, .hljs-doctag, .hljs-meta, .hljs-meta-keyword, .hljs-tag, .hljs-bullet) { color: #777; }
+body .markdown-body .hljs-comment { font-style: italic; }
+body .markdown-body .hljs-link { color: var(--inkpage-link); text-decoration: underline; }
+body .markdown-body .hljs-emphasis { font-style: italic; }
+body .markdown-body .hljs-strong { font-weight: 700; }
+body .markdown-body blockquote {
+  font: inherit; color: #444; background: var(--inkpage-quote-bg);
+  border: 0; border-left: 4px solid var(--inkpage-quote-line); border-radius: 0;
+  padding: 9px 17px; margin: 22px 0;
+}
+body .markdown-body blockquote > :first-child { margin-top: 0; }
+body .markdown-body blockquote > :last-child { margin-bottom: 0; }
+body .markdown-body :is(ul, ol) { margin: .8em 0; padding-left: 2em; }
+body .markdown-body li { padding-left: .1em; }
+body .markdown-body li > :is(ul, ol) { margin: 0; }
+body .markdown-body li > p { margin: .35em 0; }
+body .markdown-body .task-list-item { list-style-type: none; }
+body .markdown-body .task-list-item-checkbox { margin: 0 .4em 0 -1.3em; accent-color: var(--inkpage-accent); }
+body .markdown-body :is(dl, dt, dd) { margin-top: .6em; margin-bottom: .6em; }
+body .markdown-body table { width: 100%; border-collapse: collapse; font: inherit; color: #444; background: #fff; margin: 1em 0; }
+body .markdown-body table :is(th, td), body .markdown-body table > tbody > tr + tr > td {
+  padding: 9px 13px; border: 1px solid var(--inkpage-border);
+  font-weight: 400; vertical-align: middle; background: #fff; color: #444;
+}
+body .markdown-body table th { text-align: left; background: var(--inkpage-tint); }
+body .markdown-body hr { height: 0; border: 0; border-top: 1px solid var(--inkpage-border); margin: 1.5em 0; }
+body .markdown-body img { display: inline-block; max-width: 100%; height: auto; vertical-align: middle; }
+body .markdown-body :is(video, svg) { max-width: 100%; }
+body .markdown-body figure { margin: 1em 0; }
+body .markdown-body :is(figcaption, .footnotes) { font-size: .85em; color: #666; }
+body .markdown-body kbd { font-family: var(--inkpage-code-font); font-size: .85em; background: #fafafa; border: 1px solid var(--inkpage-border); border-radius: 3px; padding: 1px 5px; }
+body .markdown-body mark { color: inherit; background: var(--inkpage-tint); border-bottom: 1px solid var(--inkpage-accent); }
+body .markdown-body sup, body .markdown-body sub { line-height: 0; }
+body .markdown-body > :last-child { margin-bottom: 0; }
+body .markdown-body .code-block-copy-button { font-family: sans-serif; color: #666; background: var(--inkpage-code-block); border-color: var(--inkpage-border); }
+@media (max-width: 480px) {
+  :scope body { padding: 24px 18px; }
+  body .markdown-body pre, body .markdown-body pre:not(.hljs) { padding: 13px; }
+  body .markdown-body table :is(th, td) { padding: 7px 8px; }
+}
+
+@media print {
+  :scope { background: #fff; }
+  :scope body { max-width: none; width: auto; padding: 0; margin: 0; font-size: var(--inkpage-pdf-font-size); -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body .markdown-body { orphans: 3; widows: 3; }
+  body .markdown-body :is(h1, h2, h3, h4, h5, h6) { break-after: avoid; page-break-after: avoid; }
+  body .markdown-body h1::after { font-size: var(--inkpage-pdf-font-size); }
+  body .markdown-body thead { display: table-header-group; }
+  body .markdown-body tr, body .markdown-body img, body .markdown-body figure { break-inside: avoid; }
+  body .markdown-body pre { overflow: visible; white-space: pre-wrap; }
+  body .markdown-body a { color: var(--inkpage-link); }
+  body .markdown-body .code-block-copy-button, #code-csp-warning { display: none; }
+  body.scrollBeyondLastLine { margin-bottom: 0; }
+}
+
+}

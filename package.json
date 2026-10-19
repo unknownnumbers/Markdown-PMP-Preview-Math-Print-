@@ -1,0 +1,454 @@
+{
+  "name": "preview-math-print",
+  "displayName": "%extension.displayName%",
+  "description": "%extension.description%",
+  "version": "1.0.0",
+  "publisher": "markdown-pmp",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.96.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "markdown",
+    "preview",
+    "math",
+    "pdf",
+    "offline",
+    "fonts",
+    "themes"
+  ],
+  "main": "./dist/extension.cjs",
+  "extensionKind": [
+    "ui"
+  ],
+  "activationEvents": [
+    "onLanguage:markdown",
+    "onCommand:markdown.showPreview",
+    "onCommand:markdown.showPreviewToSide"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "%capability.untrusted%"
+    },
+    "virtualWorkspaces": {
+      "supported": "limited",
+      "description": "%capability.virtual%"
+    }
+  },
+  "contributes": {
+    "markdown.previewStyles": [
+      "./assets/fonts.css",
+      "./assets/preview.css",
+      "./assets/math/math.css"
+    ],
+    "markdown.markdownItPlugins": true,
+    "commands": [
+      {
+        "command": "Markdown-PMP.selectTheme",
+        "title": "%command.selectTheme%",
+        "category": "%extension.category%",
+        "icon": "$(symbol-color)"
+      },
+      {
+        "command": "Markdown-PMP.exportHtml",
+        "title": "%command.exportHtml%",
+        "category": "%extension.category%",
+        "enablement": "isWorkspaceTrusted"
+      },
+      {
+        "command": "Markdown-PMP.exportPdf",
+        "title": "%command.exportPdf%",
+        "category": "%extension.category%",
+        "enablement": "isWorkspaceTrusted"
+      },
+      {
+        "command": "Markdown-PMP.openSample",
+        "title": "%command.openSample%",
+        "category": "%extension.category%"
+      },
+      {
+        "command": "Markdown-PMP.openSettings",
+        "title": "%command.openSettings%",
+        "category": "%extension.category%"
+      },
+      {
+        "command": "Markdown-PMP.exportPng",
+        "title": "%command.exportPng%",
+        "category": "%extension.category%",
+        "enablement": "isWorkspaceTrusted"
+      },
+      {
+        "command": "Markdown-PMP.exportJpeg",
+        "title": "%command.exportJpeg%",
+        "category": "%extension.category%",
+        "enablement": "isWorkspaceTrusted"
+      },
+      {
+        "command": "Markdown-PMP.exportWithSettings",
+        "title": "%command.exportWithSettings%",
+        "category": "%extension.category%",
+        "enablement": "isWorkspaceTrusted"
+      },
+      {
+        "command": "Markdown-PMP.migrateMdmathSettings",
+        "title": "%command.migrateMdmathSettings%",
+        "category": "%extension.category%"
+      }
+    ],
+    "submenus": [
+      {
+        "id": "Markdown-PMP.export",
+        "label": "%menu.export%"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "Markdown-PMP.selectTheme",
+          "when": "resourceLangId == markdown",
+          "group": "navigation@20"
+        }
+      ],
+      "editor/title/context": [
+        {
+          "submenu": "Markdown-PMP.export",
+          "when": "resourceLangId == markdown",
+          "group": "Markdown-PMP"
+        }
+      ],
+      "editor/context": [
+        {
+          "submenu": "Markdown-PMP.export",
+          "when": "editorLangId == markdown",
+          "group": "Markdown-PMP"
+        }
+      ],
+      "explorer/context": [
+        {
+          "submenu": "Markdown-PMP.export",
+          "when": "resourceExtname =~ /\\.(md|markdown|mdown|mkd|mkdn|mdwn)$/i",
+          "group": "Markdown-PMP"
+        }
+      ],
+      "Markdown-PMP.export": [
+        {
+          "command": "Markdown-PMP.exportHtml",
+          "group": "export@1"
+        },
+        {
+          "command": "Markdown-PMP.exportPdf",
+          "group": "export@2"
+        },
+        {
+          "command": "Markdown-PMP.exportPng",
+          "group": "export@3"
+        },
+        {
+          "command": "Markdown-PMP.exportJpeg",
+          "group": "export@4"
+        },
+        {
+          "command": "Markdown-PMP.exportWithSettings",
+          "group": "settings@1"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "%extension.category%",
+      "properties": {
+        "Markdown-PMP.theme": {
+          "type": "string",
+          "default": "default",
+          "enum": [
+            "default",
+            "purple",
+            "blue",
+            "redblue"
+          ],
+          "enumItemLabels": [
+            "Default",
+            "Purple",
+            "Blue-White",
+            "Blue-Red"
+          ],
+          "enumDescriptions": [
+            "%theme.default%",
+            "%theme.purple%",
+            "%theme.blue%",
+            "%theme.redblue%"
+          ],
+          "description": "%setting.theme%",
+          "scope": "window",
+          "order": 1
+        },
+        "Markdown-PMP.fontSize": {
+          "type": "number",
+          "default": 23,
+          "minimum": 12,
+          "maximum": 40,
+          "description": "%setting.fontSize%",
+          "scope": "resource",
+          "order": 2
+        },
+        "Markdown-PMP.lineHeight": {
+          "type": "number",
+          "default": 1.7,
+          "minimum": 1.2,
+          "maximum": 2.5,
+          "description": "%setting.lineHeight%",
+          "scope": "resource",
+          "order": 3
+        },
+        "Markdown-PMP.maxWidth": {
+          "type": "number",
+          "default": 900,
+          "minimum": 480,
+          "maximum": 1800,
+          "description": "%setting.maxWidth%",
+          "scope": "resource",
+          "order": 4
+        },
+        "Markdown-PMP.pdf.fontSize": {
+          "type": "number",
+          "default": 12,
+          "minimum": 8,
+          "maximum": 36,
+          "description": "%setting.pdf.fontSize%",
+          "scope": "resource",
+          "order": 5
+        },
+        "Markdown-PMP.pdf.browserPath": {
+          "type": "string",
+          "default": "",
+          "description": "%setting.pdf.browserPath%",
+          "scope": "machine-overridable",
+          "order": 6,
+          "deprecationMessage": "%setting.pdf.browserPath.deprecated%"
+        },
+        "Markdown-PMP.browserPath": {
+          "type": "string",
+          "default": "",
+          "description": "%setting.browserPath%",
+          "scope": "machine-overridable"
+        },
+        "Markdown-PMP.math.preview.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "%setting.math.preview.enabled%",
+          "scope": "window"
+        },
+        "Markdown-PMP.math.export.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "%setting.math.export.enabled%",
+          "scope": "window"
+        },
+        "Markdown-PMP.math.delimiters": {
+          "type": "array",
+          "default": [
+            "dollars",
+            "brackets"
+          ],
+          "description": "%setting.math.delimiters%",
+          "scope": "window",
+          "items": {
+            "type": "string",
+            "enum": [
+              "dollars",
+              "brackets",
+              "gitlab",
+              "julia",
+              "kramdown"
+            ]
+          },
+          "uniqueItems": true,
+          "minItems": 1
+        },
+        "Markdown-PMP.math.macros": {
+          "type": "object",
+          "default": {},
+          "description": "%setting.math.macros%",
+          "scope": "window",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "Markdown-PMP.math.outerspace": {
+          "type": "boolean",
+          "default": false,
+          "description": "%setting.math.outerspace%",
+          "scope": "window"
+        },
+        "Markdown-PMP.pdf.paper": {
+          "type": "string",
+          "default": "A4",
+          "description": "%setting.pdf.paper%",
+          "scope": "window",
+          "enum": [
+            "A3",
+            "A4",
+            "A5",
+            "Letter",
+            "Legal",
+            "Tabloid",
+            "Custom"
+          ]
+        },
+        "Markdown-PMP.pdf.width": {
+          "type": "number",
+          "default": 210,
+          "description": "%setting.pdf.width%",
+          "scope": "window",
+          "minimum": 40,
+          "maximum": 2000
+        },
+        "Markdown-PMP.pdf.height": {
+          "type": "number",
+          "default": 297,
+          "description": "%setting.pdf.height%",
+          "scope": "window",
+          "minimum": 40,
+          "maximum": 2000
+        },
+        "Markdown-PMP.pdf.landscape": {
+          "type": "boolean",
+          "default": false,
+          "description": "%setting.pdf.landscape%",
+          "scope": "window"
+        },
+        "Markdown-PMP.pdf.margins": {
+          "type": "object",
+          "default": {
+            "top": 20,
+            "right": 20,
+            "bottom": 20,
+            "left": 20
+          },
+          "description": "%setting.pdf.margins%",
+          "scope": "window",
+          "additionalProperties": false,
+          "properties": {
+            "top": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000
+            },
+            "right": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000
+            },
+            "bottom": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000
+            },
+            "left": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000
+            }
+          }
+        },
+        "Markdown-PMP.pdf.scale": {
+          "type": "number",
+          "default": 1,
+          "description": "%setting.pdf.scale%",
+          "scope": "window",
+          "minimum": 0.1,
+          "maximum": 2
+        },
+        "Markdown-PMP.pdf.pageRanges": {
+          "type": "string",
+          "default": "",
+          "description": "%setting.pdf.pageRanges%",
+          "scope": "window"
+        },
+        "Markdown-PMP.pdf.header": {
+          "type": "array",
+          "default": [],
+          "description": "%setting.pdf.header%",
+          "scope": "window",
+          "items": {
+            "type": "string",
+            "enum": [
+              "filename",
+              "date",
+              "pageNumber"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "Markdown-PMP.pdf.footer": {
+          "type": "array",
+          "default": [
+            "pageNumber"
+          ],
+          "description": "%setting.pdf.footer%",
+          "scope": "window",
+          "items": {
+            "type": "string",
+            "enum": [
+              "filename",
+              "date",
+              "pageNumber"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "Markdown-PMP.image.width": {
+          "type": "number",
+          "default": 900,
+          "description": "%setting.image.width%",
+          "scope": "window",
+          "minimum": 320,
+          "maximum": 4096
+        },
+        "Markdown-PMP.image.scale": {
+          "type": "number",
+          "default": 2,
+          "description": "%setting.image.scale%",
+          "scope": "window",
+          "minimum": 1,
+          "maximum": 3
+        },
+        "Markdown-PMP.image.jpegQuality": {
+          "type": "number",
+          "default": 90,
+          "description": "%setting.image.jpegQuality%",
+          "scope": "window",
+          "minimum": 1,
+          "maximum": 100
+        }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test test/*.test.cjs",
+    "package": "pnpm run build && vsce package --no-dependencies --allow-missing-repository --out \"../output/Markdown PMP (Preview-Math-Print)-1.0.0.vsix\"",
+    "build:l10n": "node scripts/localization-catalog.mjs"
+  },
+  "dependencies": {
+    "dom-serializer": "2.0.0",
+    "highlight.js": "11.11.1",
+    "htmlparser2": "10.1.0",
+    "js-yaml": "4.1.1",
+    "katex": "0.19.0",
+    "markdown-it": "14.1.1",
+    "markdown-it-footnote": "4.0.0",
+    "markdown-it-task-lists": "2.1.1",
+    "markdown-it-texmath": "1.0.0",
+    "sanitize-html": "2.17.0",
+    "ws": "8.18.3"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^3.7.1",
+    "esbuild": "^0.25.10",
+    "prettier": "3.9.10"
+  }
+}

@@ -1,0 +1,29 @@
+Complete, unmodified fonts. CSS family names are local aliases only; font binaries are unchanged.
+
+fonts/lmroman10-regular.otf
+Copyright 2003, 2008 B. Jackowski and J. M. Nowacki (on behalf of TeX users groups). This work is released under the GUST Font License --  see http://tug.org/fonts/licenses/GUST-FONT-LICENSE.txt for details.
+
+fonts/lmroman10-bold.otf
+Copyright 2003, 2008 B. Jackowski and J. M. Nowacki (on behalf of TeX users groups). This work is released under the GUST Font License --  see http://tug.org/fonts/licenses/GUST-FONT-LICENSE.txt for details.
+
+fonts/lmroman10-italic.otf
+Copyright 2003, 2008 B. Jackowski and J. M. Nowacki (on behalf of TeX users groups). This work is released under the GUST Font License --  see http://tug.org/fonts/licenses/GUST-FONT-LICENSE.txt for details.
+
+fonts/lmroman10-bolditalic.otf
+Copyright 2003, 2008 B. Jackowski and J. M. Nowacki (on behalf of TeX users groups). This work is released under the GUST Font License --  see http://tug.org/fonts/licenses/GUST-FONT-LICENSE.txt for details.
+
+fonts/LXGWWenKaiGB-Regular.ttf
+Copyright 2022-2026 LXGW (https://github.com/lxgw/LxgwWenkaiGB)
+Copyright 2020 The Klee Project Authors (https://github.com/fontworks-fonts/Klee)
+
+fonts/NotoSans-VariableFont_wdth,wght.ttf
+Copyright 2022 The Noto Project Authors (https://github.com/notofonts/latin-greek-cyrillic)
+
+fonts/Inconsolata-Regular.ttf
+Copyright 2006 The Inconsolata Project Authors (https://github.com/cyrealtype/Inconsolata)
+
+fonts/Inconsolata-Bold.ttf
+Copyright 2006 The Inconsolata Project Authors (https://github.com/cyrealtype/Inconsolata)
+
+fonts/SarasaFixedSC-Regular.ttf
+Copyright (c) 2015-2024, Renzhi Li (aka. Belleve Invis, belleve@typeof.net). Portions Copyright (c) 2016-2020 The Inter Project Authors. Portions Copyright (c) 2014, 2015 Adobe Systems Incorporated (http://www.adobe.com/). Portions Copyright (c) 2012 Google Inc.

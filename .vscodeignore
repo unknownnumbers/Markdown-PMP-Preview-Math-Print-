@@ -1,0 +1,17 @@
+src/**
+scripts/**
+test/**
+tmp/**
+node_modules/**
+pnpm-lock.yaml
+.gitignore
+.vscodeignore
+.npmrc
+CHANGELOG.md
+changelog.md
+**/*.map
+**/*.vsix
+package.nls.zh-tw.json
+package.nls.zh-cn.json
+l10n/bundle.l10n.zh-tw.json
+l10n/bundle.l10n.zh-cn.json

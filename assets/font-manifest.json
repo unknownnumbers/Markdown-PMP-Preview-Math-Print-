@@ -1,0 +1,239 @@
+[
+  {
+    "file": "fonts/lmroman10-regular.otf",
+    "family": "Inkpage Roman",
+    "weight": "400",
+    "style": "normal",
+    "format": "opentype",
+    "license": "Latin-Modern",
+    "sha256": "58f33a735fb16413638f34462aa6e43809243e42a8a62348e706b7906f1435ec",
+    "bytes": 107188,
+    "originalMetadata": {
+      "copyright": [
+        "Copyright 2003, 2008 B. Jackowski and J. M. Nowacki (on behalf of TeX users groups). This work is released under the GUST Font License --  see http://tug.org/fonts/licenses/GUST-FONT-LICENSE.txt for details."
+      ],
+      "family": [
+        "Latin Modern Roman",
+        "LM Roman 10"
+      ],
+      "version": [
+        "Version 1.106;PS 1.106;hotconv 1.0.49;makeotf.lib2.0.14853"
+      ],
+      "license": [],
+      "licenseUrl": []
+    },
+    "source": "Original installed font; upstream linked in THIRD_PARTY_NOTICES.md"
+  },
+  {
+    "file": "fonts/lmroman10-bold.otf",
+    "family": "Inkpage Roman",
+    "weight": "700",
+    "style": "normal",
+    "format": "opentype",
+    "license": "Latin-Modern",
+    "sha256": "85c20aa51eb9e2265dc32712c80a17ef2c270f8377ae80531880a081b80b5479",
+    "bytes": 107780,
+    "originalMetadata": {
+      "copyright": [
+        "Copyright 2003, 2008 B. Jackowski and J. M. Nowacki (on behalf of TeX users groups). This work is released under the GUST Font License --  see http://tug.org/fonts/licenses/GUST-FONT-LICENSE.txt for details."
+      ],
+      "family": [
+        "Latin Modern Roman",
+        "LM Roman 10"
+      ],
+      "version": [
+        "Version 1.106;PS 1.106;hotconv 1.0.49;makeotf.lib2.0.14853"
+      ],
+      "license": [],
+      "licenseUrl": []
+    },
+    "source": "Original installed font; upstream linked in THIRD_PARTY_NOTICES.md"
+  },
+  {
+    "file": "fonts/lmroman10-italic.otf",
+    "family": "Inkpage Roman",
+    "weight": "400",
+    "style": "italic",
+    "format": "opentype",
+    "license": "Latin-Modern",
+    "sha256": "fc73c1867dc15a87b56822d3e758632fd4ae3f93c40f92d6a60a0ad1e384c159",
+    "bytes": 115244,
+    "originalMetadata": {
+      "copyright": [
+        "Copyright 2003, 2008 B. Jackowski and J. M. Nowacki (on behalf of TeX users groups). This work is released under the GUST Font License --  see http://tug.org/fonts/licenses/GUST-FONT-LICENSE.txt for details."
+      ],
+      "family": [
+        "Latin Modern Roman",
+        "LM Roman 10"
+      ],
+      "version": [
+        "Version 1.106;PS 1.106;hotconv 1.0.49;makeotf.lib2.0.14853"
+      ],
+      "license": [],
+      "licenseUrl": []
+    },
+    "source": "Original installed font; upstream linked in THIRD_PARTY_NOTICES.md"
+  },
+  {
+    "file": "fonts/lmroman10-bolditalic.otf",
+    "family": "Inkpage Roman",
+    "weight": "700",
+    "style": "italic",
+    "format": "opentype",
+    "license": "Latin-Modern",
+    "sha256": "2560e30c2f7babc4cc032320243ba1a1ff542224f602d24297c051116319e132",
+    "bytes": 114140,
+    "originalMetadata": {
+      "copyright": [
+        "Copyright 2003, 2008 B. Jackowski and J. M. Nowacki (on behalf of TeX users groups). This work is released under the GUST Font License --  see http://tug.org/fonts/licenses/GUST-FONT-LICENSE.txt for details."
+      ],
+      "family": [
+        "Latin Modern Roman",
+        "LM Roman 10"
+      ],
+      "version": [
+        "Version 1.106;PS 1.106;hotconv 1.0.49;makeotf.lib2.0.14853"
+      ],
+      "license": [],
+      "licenseUrl": []
+    },
+    "source": "Original installed font; upstream linked in THIRD_PARTY_NOTICES.md"
+  },
+  {
+    "file": "fonts/LXGWWenKaiGB-Regular.ttf",
+    "family": "Inkpage WenKai",
+    "weight": "400",
+    "style": "normal",
+    "format": "truetype",
+    "license": "LXGW-WenKai-GB",
+    "sha256": "295568c131648062107543aa159c97dd49564be791136c2abf74cad83eba3f7f",
+    "bytes": 25819540,
+    "originalMetadata": {
+      "copyright": [
+        "Copyright 2022-2026 LXGW (https://github.com/lxgw/LxgwWenkaiGB)\nCopyright 2020 The Klee Project Authors (https://github.com/fontworks-fonts/Klee)"
+      ],
+      "family": [
+        "LXGW WenKai GB",
+        "霞鹜文楷 GB"
+      ],
+      "version": [
+        "Version 1.522; March 17, 2026"
+      ],
+      "license": [
+        "This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: https://openfontlicense.org"
+      ],
+      "licenseUrl": [
+        "https://openfontlicense.org"
+      ]
+    },
+    "source": "https://github.com/lxgw/LxgwWenkaiGB/releases/download/v1.522/LXGWWenKaiGB-Regular.ttf"
+  },
+  {
+    "file": "fonts/NotoSans-VariableFont_wdth,wght.ttf",
+    "family": "Inkpage Sans",
+    "weight": "100 900",
+    "style": "normal",
+    "format": "truetype",
+    "license": "Noto-Sans",
+    "sha256": "74df1f61ab9d4bfaa961c65f8dc991deaae2885b0a6a6d6a60ed23980b3c8554",
+    "bytes": 2490816,
+    "originalMetadata": {
+      "copyright": [
+        "Copyright 2022 The Noto Project Authors (https://github.com/notofonts/latin-greek-cyrillic)"
+      ],
+      "family": [
+        "Noto Sans"
+      ],
+      "version": [
+        "Version 2.013"
+      ],
+      "license": [
+        "This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: https://scripts.sil.org/OFL"
+      ],
+      "licenseUrl": [
+        "https://scripts.sil.org/OFL"
+      ]
+    },
+    "source": "Original installed font; upstream linked in THIRD_PARTY_NOTICES.md"
+  },
+  {
+    "file": "fonts/Inconsolata-Regular.ttf",
+    "family": "Inkpage Mono",
+    "weight": "400",
+    "style": "normal",
+    "format": "truetype",
+    "license": "Inconsolata",
+    "sha256": "127875d255d4c5973ca57267a43bb9d1c04397e6c7d236984a595b6cdcb12b7c",
+    "bytes": 108684,
+    "originalMetadata": {
+      "copyright": [
+        "Copyright 2006 The Inconsolata Project Authors (https://github.com/cyrealtype/Inconsolata)"
+      ],
+      "family": [
+        "Inconsolata"
+      ],
+      "version": [
+        "Version 3.000; ttfautohint (v1.8.3)"
+      ],
+      "license": [
+        "This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: http://scripts.sil.org/OFL"
+      ],
+      "licenseUrl": [
+        "http://scripts.sil.org/OFL"
+      ]
+    },
+    "source": "Original installed font; upstream linked in THIRD_PARTY_NOTICES.md"
+  },
+  {
+    "file": "fonts/Inconsolata-Bold.ttf",
+    "family": "Inkpage Mono",
+    "weight": "700",
+    "style": "normal",
+    "format": "truetype",
+    "license": "Inconsolata",
+    "sha256": "263faa57f6c00c43a04e77df7abd5cb5cd4aae9f93507002c1217e02641fc7e6",
+    "bytes": 109728,
+    "originalMetadata": {
+      "copyright": [
+        "Copyright 2006 The Inconsolata Project Authors (https://github.com/cyrealtype/Inconsolata)"
+      ],
+      "family": [
+        "Inconsolata"
+      ],
+      "version": [
+        "Version 3.000; ttfautohint (v1.8.3)"
+      ],
+      "license": [
+        "This Font Software is licensed under the SIL Open Font License, Version 1.1. This license is available with a FAQ at: http://scripts.sil.org/OFL"
+      ],
+      "licenseUrl": [
+        "http://scripts.sil.org/OFL"
+      ]
+    },
+    "source": "Original installed font; upstream linked in THIRD_PARTY_NOTICES.md"
+  },
+  {
+    "file": "fonts/SarasaFixedSC-Regular.ttf",
+    "family": "Inkpage CJK Sans",
+    "weight": "400",
+    "style": "normal",
+    "format": "truetype",
+    "license": "Sarasa-Gothic",
+    "sha256": "c3a61d395e5f9c7420728aa2cc076f09b7ab4bc8666e8bfb7ddd41df757aff83",
+    "bytes": 24699392,
+    "originalMetadata": {
+      "copyright": [
+        "Copyright (c) 2015-2024, Renzhi Li (aka. Belleve Invis, belleve@typeof.net). Portions Copyright (c) 2016-2020 The Inter Project Authors. Portions Copyright (c) 2014, 2015 Adobe Systems Incorporated (http://www.adobe.com/). Portions Copyright (c) 2012 Google Inc."
+      ],
+      "family": [
+        "Sarasa Fixed SC"
+      ],
+      "version": [
+        "Version 1.0.13; ttfautohint (v1.8.4)"
+      ],
+      "license": [],
+      "licenseUrl": []
+    },
+    "source": "Original installed font; upstream linked in THIRD_PARTY_NOTICES.md"
+  }
+]
