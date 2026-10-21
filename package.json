@@ -2,7 +2,7 @@
   "name": "preview-math-print",
   "displayName": "%extension.displayName%",
   "description": "%extension.description%",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "markdown-pmp",
   "license": "MIT",
   "engines": {
@@ -430,7 +430,7 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "test": "node --test test/*.test.cjs",
-    "package": "pnpm run build && vsce package --no-dependencies --allow-missing-repository --out \"../output/Markdown PMP (Preview-Math-Print)-1.0.0.vsix\"",
+    "package": "pnpm run build && vsce package --no-dependencies --allow-missing-repository --out \"../output/Markdown PMP (Preview-Math-Print)-1.0.1.vsix\"",
     "build:l10n": "node scripts/localization-catalog.mjs"
   },
   "dependencies": {

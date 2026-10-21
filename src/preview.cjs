@@ -45,10 +45,25 @@ function guardedPlugin(md, plugin, active, options) {
 function installPreview(md, getOptions, getMath, variableCss, onError) {
   if (md[INSTALLED]) return md;
   md[INSTALLED] = true;
-  const enhanced = () => getOptions().theme !== "default";
+  let settings;
+  function withSettings(env, action) {
+    const previous = settings;
+    try {
+      settings = {
+        options: getOptions(env?.currentDocument),
+        math: getMath(),
+      };
+      return action();
+    } finally {
+      settings = previous;
+    }
+  }
+  const readOptions = () => settings?.options ?? getOptions();
+  const readMath = () => settings?.math ?? getMath();
+  const enhanced = () => readOptions().theme !== "default";
   guardedPlugin(md, footnote, enhanced);
   guardedPlugin(md, tasks, enhanced, { enabled: false });
-  installMath(md, getMath);
+  installMath(md, readMath);
   const parse = md.parse;
   const plainFence = new MarkdownIt().renderer.rules.fence;
   let fenceInstalled = false;
@@ -58,7 +73,7 @@ function installPreview(md, getOptions, getMath, variableCss, onError) {
       md.renderer.rules.fence = function (tokens, i, options, env, self) {
         // The built-in math fence wrapper is bypassed only while Inkpage owns math.
         if (
-          getMath().enabled &&
+          readMath().enabled &&
           tokens[i].info.trim().split(/\s/)[0] === "math"
         )
           return plainFence(tokens, i, options, env, self);
@@ -66,40 +81,48 @@ function installPreview(md, getOptions, getMath, variableCss, onError) {
       };
       fenceInstalled = true;
     }
-    const restore = [];
-    if (getMath().enabled)
-      for (const [ruler, names] of [
-        [
-          md.inline.ruler,
-          ["math_inline", "math_inline_block", "math_inline_bare_block"],
-        ],
-        [md.block.ruler, ["math_block"]],
-      ]) {
-        for (const name of names) {
-          const before = ruler.getRules("").length;
-          ruler.disable(name, true);
-          if (ruler.getRules("").length < before)
-            restore.push(() => ruler.enable(name, true));
+    return withSettings(args[1], () => {
+      const restore = [];
+      if (readMath().enabled)
+        for (const [ruler, names] of [
+          [
+            md.inline.ruler,
+            ["math_inline", "math_inline_block", "math_inline_bare_block"],
+          ],
+          [md.block.ruler, ["math_block"]],
+        ]) {
+          for (const name of names) {
+            const before = ruler.getRules("").length;
+            ruler.disable(name, true);
+            if (ruler.getRules("").length < before)
+              restore.push(() => ruler.enable(name, true));
+          }
         }
+      try {
+        return parse.apply(this, args);
+      } catch (error) {
+        onError?.(error);
+        throw error;
+      } finally {
+        restore.forEach((fn) => fn());
       }
-    try {
-      return parse.apply(this, args);
-    } catch (error) {
-      onError?.(error);
-      throw error;
-    } finally {
-      restore.forEach((fn) => fn());
-    }
+    });
+  };
+  const parseInline = md.parseInline;
+  md.parseInline = function (...args) {
+    return withSettings(args[1], () => parseInline.apply(this, args));
   };
   const render = md.renderer.render;
   md.renderer.render = function (tokens, options, env = {}) {
-    // Macro definitions are document-local, including repeated renders of cached tokens.
-    delete env.inkpageMacros;
-    delete env.inkpageMathErrors;
-    const html = render.call(this, tokens, options, env);
-    return enhanced()
-      ? `${html}\n<span class="inkpage-theme-marker" hidden></span><style data-inkpage-theme>${variableCss(getOptions(env.currentDocument))}</style>`
-      : html;
+    return withSettings(env, () => {
+      // Macro definitions are document-local, including repeated renders of cached tokens.
+      delete env.inkpageMacros;
+      delete env.inkpageMathErrors;
+      const html = render.call(this, tokens, options, env);
+      return enhanced()
+        ? `${html}\n<span class="inkpage-theme-marker" hidden></span><style data-inkpage-theme>${variableCss(readOptions())}</style>`
+        : html;
+    });
   };
   return md;
 }

@@ -161,3 +161,79 @@ test("Conflicting syntaxes and impossible paper/margin combinations fail clearly
   assert.equal(c.width, 200);
   assert.match(layoutCss(c, "pdf"), /size:200mm 100mm/);
 });
+
+test("Long previews keep configuration reads bounded and refresh cached-token appearance and macros", () => {
+  let theme = "purple";
+  let macros = { "\\RR": "x" };
+  let optionReads = 0;
+  let mathReads = 0;
+  const resources = [];
+  const md = new MarkdownIt();
+  installPreview(
+    md,
+    (resource) => {
+      optionReads++;
+      resources.push(resource);
+      return { theme };
+    },
+    () => {
+      mathReads++;
+      return { enabled: true, macros };
+    },
+    ({ theme }) => `html{--test-theme:${theme}}`,
+  );
+  const env = { currentDocument: "file:///long.md" };
+  const source = "$\\RR$\n\n" + "Text with `code` and a link.\n\n".repeat(2000);
+  const tokens = md.parse(source, env);
+  const first = md.renderer.render(tokens, md.options, env);
+  assert.ok(
+    optionReads <= 4,
+    `Theme configuration was read ${optionReads} times`,
+  );
+  assert.ok(mathReads <= 4, `Math configuration was read ${mathReads} times`);
+  assert.ok(resources.every((resource) => resource === env.currentDocument));
+  assert.match(first, /--test-theme:purple/);
+  assert.equal(env.inkpageMathErrors, undefined);
+
+  theme = "blue";
+  macros = { "\\RR": "y" };
+  const second = md.renderer.render(tokens, md.options, env);
+  assert.match(second, /--test-theme:blue/);
+  assert.notEqual(second, first);
+  assert.equal(env.inkpageMathErrors, undefined);
+  macros = {};
+  md.renderer.render(tokens, md.options, env);
+  assert.equal(env.inkpageMathErrors.length, 1);
+
+  theme = "default";
+  const final = md.render("Plain text", env);
+  assert.doesNotMatch(final, /inkpage-theme-marker/);
+});
+
+test("Inline preview parsing also reuses settings and failed renders release their snapshot", () => {
+  let theme = "purple";
+  let reads = 0;
+  let fail = true;
+  const md = new MarkdownIt();
+  md.renderer.rules.text = (tokens, i) => {
+    if (fail) throw new Error("Render failure");
+    return tokens[i].content;
+  };
+  installPreview(
+    md,
+    () => ({ theme }),
+    () => {
+      reads++;
+      return { enabled: true };
+    },
+    ({ theme }) => `html{--test-theme:${theme}}`,
+  );
+  assert.throws(
+    () => md.renderInline("Text `code` ".repeat(2000)),
+    /Render failure/,
+  );
+  assert.ok(reads <= 4, `Math configuration was read ${reads} times`);
+  fail = false;
+  theme = "blue";
+  assert.match(md.renderInline("Now readable"), /--test-theme:blue/);
+});
