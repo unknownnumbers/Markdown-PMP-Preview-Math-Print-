@@ -118,7 +118,25 @@ function installPreview(md, getOptions, getMath, variableCss, onError) {
       // Macro definitions are document-local, including repeated renders of cached tokens.
       delete env.inkpageMacros;
       delete env.inkpageMathErrors;
-      const html = render.call(this, tokens, options, env);
+      // VS Code adds auto direction to both lists and their items. A large list
+      // then repeatedly scans children that already determine their own direction.
+      const renderTokens = tokens.map((token) => {
+        if (
+          (token.type === "bullet_list_open" ||
+            token.type === "ordered_list_open") &&
+          token.attrGet("data-line") !== null &&
+          token.attrGet("dir") === "auto"
+        )
+          return Object.assign(
+            Object.create(Object.getPrototypeOf(token)),
+            token,
+            {
+              attrs: token.attrs.filter(([name]) => name !== "dir"),
+            },
+          );
+        return token;
+      });
+      const html = render.call(this, renderTokens, options, env);
       return enhanced()
         ? `${html}\n<span class="inkpage-theme-marker" hidden></span><style data-inkpage-theme>${variableCss(readOptions())}</style>`
         : html;

@@ -2,7 +2,7 @@
 
 [English](#english) · [Traditional Chinese](#traditional-chinese) · [Simplified Chinese](#simplified-chinese)
 
-[Download v1.0.0 (VSIX)](https://github.com/unknownnumbers/Markdown-PMP-Preview-Math-Print-/releases/download/v1.0.0/Markdown-PMP-Preview-Math-Print-1.0.0.vsix)
+[Download VSIX](https://github.com/unknownnumbers/Markdown-PMP-Preview-Math-Print-/releases/latest)
 
 ## English
 
