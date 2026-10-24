@@ -19,7 +19,7 @@ const {
   normalizeOptions,
   variableCss,
 } = require("./theme.cjs");
-const { installMath, mathErrors } = require("./math.cjs");
+const { installMath, mathErrors, restoreMath } = require("./math.cjs");
 
 const PLUGINS = Symbol.for("inkpage.markdown.plugins");
 function commonPlugins(md) {
@@ -51,29 +51,27 @@ function createRenderer(options = {}) {
     "c#": "cs",
     csharp: "cs",
   };
-  const md = commonPlugins(
-    new MarkdownIt({
-      html: true,
-      linkify: options.linkify !== false,
-      breaks: Boolean(options.breaks),
-      typographer: Boolean(options.typographer),
-      highlight: (source, language) => {
-        const name =
-          aliases[language?.toLowerCase()] || language?.toLowerCase();
-        if (name && highlight.getLanguage(name)) {
-          try {
-            return highlight.highlight(source, {
-              language: name,
-              ignoreIllegals: true,
-            }).value;
-          } catch {
-            /* Plain code remains readable. */
-          }
+  const md = new MarkdownIt({
+    html: true,
+    linkify: options.linkify !== false,
+    breaks: Boolean(options.breaks),
+    typographer: Boolean(options.typographer),
+    highlight: (source, language) => {
+      const name = aliases[language?.toLowerCase()] || language?.toLowerCase();
+      if (name && highlight.getLanguage(name)) {
+        try {
+          return highlight.highlight(source, {
+            language: name,
+            ignoreIllegals: true,
+          }).value;
+        } catch {
+          /* Plain code remains readable. */
         }
-        return escapeHtml(source);
-      },
-    }),
-  );
+      }
+      return escapeHtml(source);
+    },
+  });
+  if (options.commonPlugins !== false) commonPlugins(md);
   md.linkify.set({ fuzzyLink: false });
   installMath(md, () => options.math || { enabled: false });
   const originalHeading = md.renderer.rules.heading_open;
@@ -134,7 +132,7 @@ function renderFrontMatter(source, mode = "table") {
   };
 }
 
-function sanitizeRenderedHtml(html) {
+function sanitizeRenderedHtml(html, preview = false) {
   return sanitizeHtml(html, {
     allowedTags: [
       ...sanitizeHtml.defaults.allowedTags,
@@ -150,7 +148,16 @@ function sanitizeRenderedHtml(html) {
       "del",
     ],
     allowedAttributes: {
-      "*": ["class", "id", "title", "dir", "role", "aria-label", "aria-hidden"],
+      "*": [
+        "class",
+        "id",
+        "title",
+        "dir",
+        "role",
+        "aria-label",
+        "aria-hidden",
+        ...(preview ? ["data-pmp-line", "data-pmp-end", "data-pmp-key"] : []),
+      ],
       a: ["href", "name", "target", "rel"],
       img: ["src", "alt", "title", "width", "height"],
       input: ["type", "checked", "disabled", "class"],
@@ -346,8 +353,7 @@ async function renderDocument(input) {
     front.html + renderer.render(front.source, env),
   );
   mathErrors(env);
-  for (const [key, html] of env.inkpageTrusted)
-    rendered = rendered.replaceAll(key, html);
+  rendered = restoreMath(rendered, env);
   const embedded = await embedImages(rendered, {
     ...input,
     readAsset: input.readAsset || ((uri) => fs.readFile(new URL(uri))),

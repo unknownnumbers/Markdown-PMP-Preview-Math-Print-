@@ -1,0 +1,7 @@
+@scope (html:has(.inkpage-theme-marker[data-pmp-batch-fonts])) {
+  :scope:not(.pmp-fonts-ready) body {
+    --inkpage-body-font: "Times New Roman", "KaiTi", serif;
+    --inkpage-heading-font: Arial, "Microsoft YaHei", sans-serif;
+    --inkpage-code-font: Consolas, "Microsoft YaHei", monospace;
+  }
+}

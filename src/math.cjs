@@ -199,4 +199,11 @@ function mathErrors(env) {
     );
 }
 
-module.exports = { installMath, normalizeMath, mathErrors, MODES };
+function restoreMath(html, env) {
+  return html.replace(
+    /INKPAGEMATH[0-9a-f]{40}/g,
+    (key) => env.inkpageTrusted?.get(key) ?? key,
+  );
+}
+
+module.exports = { installMath, normalizeMath, mathErrors, restoreMath, MODES };

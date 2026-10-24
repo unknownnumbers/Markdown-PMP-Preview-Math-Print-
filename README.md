@@ -2,8 +2,6 @@
 
 [English](#english) · [Traditional Chinese](#traditional-chinese) · [Simplified Chinese](#simplified-chinese)
 
-[Download VSIX](https://github.com/unknownnumbers/Markdown-PMP-Preview-Math-Print-/releases/latest)
-
 ## English
 
 Markdown PMP adds reading themes, offline math and HTML / PDF / PNG / JPEG export to VS Code's built-in Markdown preview. Body fonts for the three PMP themes and math fonts are included.
@@ -16,6 +14,14 @@ Markdown PMP adds reading themes, offline math and HTML / PDF / PNG / JPEG expor
 4. Use **Markdown PMP: Open Preview Sample** to see headings, links, tables and formulas.
 
 Command menus and setting descriptions use English. Export forms and messages follow VS Code's display language, with English (`en`), Traditional Chinese (`zh-TC`) and Simplified Chinese (`zh-SC`) supported. Use **Configure Display Language** to change the display language.
+
+### Large documents
+
+With `Markdown-PMP.largePreview.enabled` enabled (the default), VS Code's preview buttons, preview commands and existing shortcuts automatically open continuous preview for Markdown files with at least 256,000 characters. Smaller files keep the native preview.
+
+Content loads automatically as you scroll, keeping the page responsive for long lists and tables. **Find / Ctrl+F** searches the whole document, and **Headings** jumps between sections. The editor and preview follow each other's scrolling, controlled by VS Code's `markdown.preview.scrollPreviewWithEditor` and `markdown.preview.scrollEditorWithPreview` settings. Exports include the whole document.
+
+This view uses PMP's Markdown renderer, themes and math settings. Default follows VS Code's colors and Markdown preview fonts. Other extensions' preview scripts and additional syntax are supported in the native preview. Set `Markdown-PMP.largePreview.enabled` to `false` to restore native previews, including currently open continuous previews.
 
 ### Themes and settings
 
@@ -49,7 +55,7 @@ Run **Markdown PMP: Open Extension Settings**, search for `Markdown-PMP` in Sett
 
 Preview and export use KaTeX with shared math settings. The default delimiter array supports `$x$`, `$$x$$`, `\(x\)` and `\[x\]` together. A manual equation number can follow a display formula, for example `$$E=mc^2$$ (1)`. Code and escaped `\$` remain ordinary text.
 
-- `Markdown-PMP.math.preview.enabled` controls math in the preview. Disabling it restores the previous math provider.
+- `Markdown-PMP.math.preview.enabled` controls PMP math in previews. When disabled, the native preview can use another math provider; the continuous preview shows formulas as ordinary Markdown.
 - `Markdown-PMP.math.export.enabled` controls math rendering during export. Disabling it exports formulas as ordinary Markdown text.
 - `Markdown-PMP.math.macros` stores custom macros.
 - `Markdown-PMP.math.outerspace` requires spaces around single-dollar inline math when enabled; it defaults to `false`.
@@ -102,7 +108,7 @@ Image settings are `Markdown-PMP.image.width` (layout width in px), `Markdown-PM
 
 Other preview themes or custom styles may override the preview's appearance. Export supports Markdown, tables, syntax highlighting, task lists, footnotes and KaTeX formulas. Third-party extensions' additional syntax and styles may not be fully supported by the exporter.
 
-Currently verified only on Windows with VS Code 1.142.
+Currently verified only on Windows with VS Code 1.142 and 1.143.
 
 ### Files and source build
 
@@ -142,6 +148,14 @@ Markdown PMP 為 VS Code 原生 Markdown 預覽提供閱讀主題、離線公式
 
 命令選單與設定說明使用英文。匯出設定頁與訊息跟隨 VS Code 顯示語言，支援 English（`en`）、Traditional Chinese（`zh-TC`）和 Simplified Chinese（`zh-SC`）。可透過 **Configure Display Language** 切換顯示語言。
 
+### 大檔案
+
+`Markdown-PMP.largePreview.enabled` 預設開啟。透過 VS Code 的預覽按鈕、預覽命令或原有快捷鍵開啟時，達到 256,000 字元的 Markdown 檔案自動使用連續預覽；小檔案維持原生預覽。
+
+內容隨捲動自動載入，讓長列表與大表格保持順暢。**Find／Ctrl+F** 搜尋全文，**Headings** 可跳至各節。編輯器與預覽會互相隨動，沿用 VS Code 的 `markdown.preview.scrollPreviewWithEditor` 和 `markdown.preview.scrollEditorWithPreview` 設定。匯出仍包含全文。
+
+此檢視使用 PMP 的 Markdown 解析、主題與公式設定；Default 跟隨 VS Code 配色與 Markdown 預覽字型。其他擴充功能的預覽腳本與額外語法可在原生預覽使用。將 `Markdown-PMP.largePreview.enabled` 設為 `false` 會恢復原生預覽，包括目前開啟的連續預覽。
+
 ### 主題與設定
 
 | 主題       | 設定值    | 說明                |
@@ -174,7 +188,7 @@ Markdown PMP 為 VS Code 原生 Markdown 預覽提供閱讀主題、離線公式
 
 預覽與匯出使用 KaTeX，並共用公式設定。預設分隔符陣列同時支援 `$x$`、`$$x$$`、`\(x\)` 與 `\[x\]`。獨立公式後可加上手動編號，例如 `$$E=mc^2$$ (1)`。程式碼與跳脫的 `\$` 保留為一般文字。
 
-- `Markdown-PMP.math.preview.enabled`：控制預覽中的公式；關閉後恢復原有公式處理方式。
+- `Markdown-PMP.math.preview.enabled`：控制 PMP 公式預覽；關閉時原生預覽可使用其他公式處理方式，連續預覽則將公式顯示為一般 Markdown。
 - `Markdown-PMP.math.export.enabled`：控制匯出中的公式；關閉後按一般 Markdown 文字處理。
 - `Markdown-PMP.math.macros`：儲存自訂巨集。
 - `Markdown-PMP.math.outerspace`：啟用時，要求單美元符號的行內公式前後留空格；預設為 `false`。
@@ -227,7 +241,7 @@ PDF 設定使用 `Markdown-PMP.pdf.*` 前綴：
 
 其他預覽主題或自訂樣式可能覆蓋預覽外觀。匯出支援 Markdown、表格、程式碼高亮、任務清單、註腳及 KaTeX 公式；第三方擴充功能的專用語法與樣式可能無法完整匯出。
 
-目前僅驗證了 Windows、VS Code 1.142 環境。
+目前僅驗證了 Windows、VS Code 1.142 與 1.143 環境。
 
 ### 檔案結構與原始碼建置
 
@@ -267,6 +281,14 @@ Markdown PMP 为 VS Code 原生 Markdown 预览提供阅读主题、离线公式
 
 命令菜单与设置说明使用英文。导出设置页与消息跟随 VS Code 显示语言，支持 English（`en`）、Traditional Chinese（`zh-TC`）和 Simplified Chinese（`zh-SC`）。可通过 **Configure Display Language** 切换显示语言。
 
+### 大文件
+
+`Markdown-PMP.largePreview.enabled` 默认开启。通过 VS Code 的预览按钮、预览命令或原有快捷键打开时，达到 256,000 字符的 Markdown 文件自动使用连续预览；小文件保持原生预览。
+
+内容随滚动自动加载，让长列表与大表格保持流畅。**Find／Ctrl+F** 搜索全文，**Headings** 可跳转到各节。编辑器与预览会互相随动，沿用 VS Code 的 `markdown.preview.scrollPreviewWithEditor` 和 `markdown.preview.scrollEditorWithPreview` 设置。导出仍包含全文。
+
+此视图使用 PMP 的 Markdown 解析、主题与公式设置；Default 跟随 VS Code 配色与 Markdown 预览字体。其他扩展的预览脚本与额外语法可在原生预览使用。将 `Markdown-PMP.largePreview.enabled` 设为 `false` 会恢复原生预览，包括当前打开的连续预览。
+
 ### 主题与设置
 
 | 主题       | 设置值    | 说明                |
@@ -299,7 +321,7 @@ Markdown PMP 为 VS Code 原生 Markdown 预览提供阅读主题、离线公式
 
 预览与导出使用 KaTeX，并共用公式设置。默认分隔符数组同时支持 `$x$`、`$$x$$`、`\(x\)` 与 `\[x\]`。独立公式后可加上手工编号，例如 `$$E=mc^2$$ (1)`。代码与转义的 `\$` 保留为普通文本。
 
-- `Markdown-PMP.math.preview.enabled`：控制预览中的公式；关闭后恢复原有公式处理方式。
+- `Markdown-PMP.math.preview.enabled`：控制 PMP 公式预览；关闭时原生预览可使用其他公式处理方式，连续预览则将公式显示为普通 Markdown。
 - `Markdown-PMP.math.export.enabled`：控制导出中的公式；关闭后按普通 Markdown 文本处理。
 - `Markdown-PMP.math.macros`：保存自定义宏。
 - `Markdown-PMP.math.outerspace`：启用时，要求单美元符号的行内公式前后留空格；默认为 `false`。
@@ -352,7 +374,7 @@ PDF 设置使用 `Markdown-PMP.pdf.*` 前缀：
 
 其他预览主题或自定义样式可能覆盖预览外观。导出支持 Markdown、表格、代码高亮、任务列表、脚注及 KaTeX 公式；第三方扩展的专用语法与样式可能无法完整导出。
 
-目前仅验证了 Windows、VS Code 1.142 环境。
+目前仅验证了 Windows、VS Code 1.142 和 1.143 环境。
 
 ### 文件结构与源码构建
 

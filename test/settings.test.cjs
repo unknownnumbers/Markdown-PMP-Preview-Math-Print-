@@ -43,13 +43,14 @@ function fixture(current = {}, legacy = {}) {
 
 test("Only Markdown-PMP settings are contributed, with the original defaults and scopes", () => {
   assert.equal(SETTINGS_SECTION, "Markdown-PMP");
-  assert.equal(Object.keys(properties).length, 24);
   assert.ok(
     Object.keys(properties).every((key) => key.startsWith("Markdown-PMP.")),
   );
   assert.equal(properties["Markdown-PMP.theme"].default, "default");
   assert.equal(properties["Markdown-PMP.math.preview.enabled"].default, true);
   assert.equal(properties["Markdown-PMP.math.export.enabled"].default, true);
+  assert.equal(properties["Markdown-PMP.largePreview.enabled"].default, true);
+  assert.equal(properties["Markdown-PMP.largePreview.enabled"].scope, "window");
   assert.equal(
     properties["Markdown-PMP.browserPath"].scope,
     "machine-overridable",

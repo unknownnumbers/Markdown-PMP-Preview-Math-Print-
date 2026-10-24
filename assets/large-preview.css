@@ -1,0 +1,118 @@
+html {
+  overflow-anchor: none;
+  scroll-behavior: auto;
+}
+body {
+  margin: 0 auto;
+  padding-top: 38px;
+}
+#pmp-content {
+  min-height: 60vh;
+}
+.pmp-chunk {
+  display: flow-root;
+  overflow-anchor: none;
+}
+.pmp-chunk > :first-child {
+  margin-top: 0;
+}
+.markdown-body .pmp-continued {
+  margin-top: 0 !important;
+}
+.markdown-body .pmp-continues {
+  margin-bottom: 0 !important;
+}
+.markdown-body table[data-pmp-table] {
+  table-layout: fixed;
+}
+.markdown-body table[data-pmp-table] :is(th, td) {
+  overflow-wrap: anywhere;
+}
+html.pmp-themed:not(.pmp-fonts-ready) body {
+  --inkpage-body-font: "Times New Roman", KaiTi, serif;
+  --inkpage-heading-font: Arial, "Microsoft YaHei", sans-serif;
+  --inkpage-code-font: Consolas, "Microsoft YaHei", monospace;
+}
+#pmp-tools,
+#pmp-find,
+#pmp-message {
+  font: 13px var(--vscode-font-family, sans-serif);
+}
+#pmp-tools {
+  position: fixed;
+  z-index: 10;
+  top: 6px;
+  right: 20px;
+  display: flex;
+  gap: 5px;
+}
+#pmp-find {
+  position: fixed;
+  z-index: 11;
+  top: 38px;
+  right: 20px;
+  max-width: calc(100vw - 40px);
+  padding: 6px;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  background: var(--vscode-editorWidget-background);
+  color: var(--vscode-editorWidget-foreground);
+  border: 1px solid var(--vscode-widget-border);
+  box-shadow: 0 2px 8px #0003;
+}
+#pmp-find[hidden],
+#pmp-message[hidden] {
+  display: none;
+}
+#pmp-tools button,
+#pmp-find button,
+#pmp-find input {
+  font: inherit;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, var(--vscode-widget-border));
+  border-radius: 3px;
+  padding: 4px 7px;
+}
+#pmp-tools button,
+#pmp-find button {
+  cursor: pointer;
+}
+#pmp-tools button:hover,
+#pmp-find button:hover {
+  background: var(--vscode-toolbar-hoverBackground);
+}
+#pmp-find input {
+  width: 190px;
+  min-width: 60px;
+}
+#pmp-count {
+  white-space: nowrap;
+}
+#pmp-message {
+  position: fixed;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 8px 14px;
+  max-width: 80vw;
+  background: var(--vscode-editorWidget-background);
+  color: var(--vscode-editorWidget-foreground);
+  border: 1px solid var(--vscode-widget-border);
+  z-index: 20;
+}
+::highlight(pmp-find) {
+  background: var(--vscode-editor-findMatchBackground, #f6d45b);
+  color: var(--vscode-editor-foreground);
+}
+.pmp-table-sample {
+  position: fixed;
+  left: -20000px;
+  top: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+body .pmp-table-sample table {
+  table-layout: auto;
+}

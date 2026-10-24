@@ -58,3 +58,14 @@ test("Nested list items, paragraphs and explicit raw HTML keep their direction s
   assert.equal((html.match(/<(?:ul|ol)\b[^>]*dir="auto"/g) || []).length, 1);
   assert.match(html, /<ul dir="auto"><li>Explicit HTML<\/li><\/ul>/);
 });
+
+test("Only large themed previews request batched fonts, keeping the complete content", () => {
+  const source = "Content ".repeat(40_000);
+  for (const theme of ["default", "purple"]) {
+    const md = preview(theme);
+    assert.doesNotMatch(md.render("Short document"), /data-pmp-batch-fonts/);
+    const html = md.render(source);
+    assert.equal(html.includes(source.trimEnd()), true);
+    assert.equal(html.includes("data-pmp-batch-fonts"), theme === "purple");
+  }
+});

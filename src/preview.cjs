@@ -1,6 +1,7 @@
 "use strict";
 
 const { installMath } = require("./math.cjs");
+const { t } = require("./i18n.cjs");
 const footnote = require("markdown-it-footnote");
 const tasks = require("markdown-it-task-lists");
 const MarkdownIt = require("markdown-it");
@@ -42,7 +43,14 @@ function guardedPlugin(md, plugin, active, options) {
     }
 }
 
-function installPreview(md, getOptions, getMath, variableCss, onError) {
+function installPreview(
+  md,
+  getOptions,
+  getMath,
+  variableCss,
+  onError,
+  onNativePreview,
+) {
   if (md[INSTALLED]) return md;
   md[INSTALLED] = true;
   let settings;
@@ -115,6 +123,8 @@ function installPreview(md, getOptions, getMath, variableCss, onError) {
   const render = md.renderer.render;
   md.renderer.render = function (tokens, options, env = {}) {
     return withSettings(env, () => {
+      if (onNativePreview?.(tokens, env))
+        return `<p>${t("Preparing preview…")}</p>`;
       // Macro definitions are document-local, including repeated renders of cached tokens.
       delete env.inkpageMacros;
       delete env.inkpageMathErrors;
@@ -138,7 +148,7 @@ function installPreview(md, getOptions, getMath, variableCss, onError) {
       });
       const html = render.call(this, renderTokens, options, env);
       return enhanced()
-        ? `${html}\n<span class="inkpage-theme-marker" hidden></span><style data-inkpage-theme>${variableCss(readOptions())}</style>`
+        ? `${html}\n<span class="inkpage-theme-marker"${html.length >= 256_000 ? " data-pmp-batch-fonts" : ""} hidden></span><style data-inkpage-theme>${variableCss(readOptions())}</style>`
         : html;
     });
   };

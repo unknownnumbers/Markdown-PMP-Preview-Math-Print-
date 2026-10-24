@@ -6,6 +6,8 @@ const { getSettings, affectsSettings } = require("./settings.cjs");
 const { PALETTES, normalizeOptions, variableCss } = require("./theme.cjs");
 const { normalizeMath } = require("./math.cjs");
 const { installPreview } = require("./preview.cjs");
+const { createLargePreview } = require("./large-preview.cjs");
+const { createNativePreviewRouter } = require("./native-preview-router.cjs");
 const { renderDocument, checkAbort } = require("./render.cjs");
 const { createPdf, createImages } = require("./pdf.cjs");
 const { normalizeExport, layoutCss } = require("./export-options.cjs");
@@ -82,6 +84,16 @@ function activate(context) {
       80,
     );
   let lastMarkdown;
+  const largePreview = createLargePreview(context, {
+    readOptions,
+    readMath,
+    log,
+    onActivate(uri) {
+      lastMarkdown = uri;
+      updateStatus();
+    },
+  });
+  const previewRouter = createNativePreviewRouter(vscode, largePreview, log);
   let warnedConflict = false;
   function checkMathConflict() {
     if (
@@ -125,8 +137,9 @@ function activate(context) {
     if (
       e?.document.languageId === "markdown" ||
       (lastMarkdown &&
-        p instanceof vscode.TabInputWebview &&
-        /markdown/i.test(p.viewType))
+        (p instanceof vscode.TabInputWebview ||
+          p instanceof vscode.TabInputCustom) &&
+        /markdown|Markdown-PMP/i.test(p.viewType))
     ) {
       status.text = `$(book) ${PALETTES[readOptions().theme].name}`;
       status.tooltip = t(
@@ -159,6 +172,8 @@ function activate(context) {
     if (arg?.scheme) return vscode.workspace.openTextDocument(arg);
     if (vscode.window.activeTextEditor?.document.languageId === "markdown")
       return vscode.window.activeTextEditor.document;
+    if (largePreview.activeDocument)
+      return vscode.workspace.openTextDocument(largePreview.activeDocument);
     if (lastMarkdown) return vscode.workspace.openTextDocument(lastMarkdown);
     const docs = vscode.workspace.textDocuments.filter(
       (x) => x.languageId === "markdown" && !x.isClosed,
@@ -420,6 +435,8 @@ function activate(context) {
   }
   remember(vscode.window.activeTextEditor);
   context.subscriptions.push(
+    largePreview,
+    previewRouter,
     log,
     status,
     vscode.commands.registerCommand("Markdown-PMP.selectTheme", selectTheme),
@@ -479,6 +496,10 @@ function activate(context) {
       ),
     );
   return {
+    openLargePreview: (uri, beside = true) => largePreview.open(uri, beside),
+    get largePreviews() {
+      return largePreview.previews;
+    },
     extendMarkdownIt(md) {
       checkMathConflict();
       return installPreview(
@@ -487,6 +508,7 @@ function activate(context) {
         () => readMath("preview"),
         variableCss,
         (e) => log.appendLine(e.message),
+        previewRouter.onNativeRender,
       );
     },
   };

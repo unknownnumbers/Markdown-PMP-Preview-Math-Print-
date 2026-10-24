@@ -12,11 +12,23 @@ export const manifest = [
   ],
   [
     "extension.description",
-    "Four Markdown preview modes, offline math and fonts, and HTML, PDF, PNG and JPEG export.",
-    "四種 Markdown 預覽模式、離線公式與字型，以及 HTML、PDF、PNG、JPEG 匯出。",
-    "四种 Markdown 预览模式、离线公式与字体，以及 HTML、PDF、PNG、JPEG 导出。",
+    "Four Markdown preview modes, continuous large-document reading, offline math and fonts, and HTML, PDF, PNG and JPEG export.",
+    "四種 Markdown 預覽模式、大檔案連續閱讀、離線公式與字型，以及 HTML、PDF、PNG、JPEG 匯出。",
+    "四种 Markdown 预览模式、大文件连续阅读、离线公式与字体，以及 HTML、PDF、PNG、JPEG 导出。",
   ],
   ["extension.category", "Markdown PMP", "Markdown PMP", "Markdown PMP"],
+  [
+    "editor.largePreview",
+    "Markdown PMP Preview",
+    "Markdown PMP Preview",
+    "Markdown PMP Preview",
+  ],
+  [
+    "setting.largePreview.enabled",
+    "Automatically use continuous preview for Markdown files with at least 256,000 characters through VS Code's preview buttons and commands. Smaller files keep the native preview. Disable to restore native previews. Continuous preview supports scroll sync, full-document search and headings; other extensions' preview scripts are not loaded in this view.",
+    "透過 VS Code 預覽按鈕與命令開啟時，至少 256,000 字元的 Markdown 檔案自動使用連續預覽；小檔案維持原生預覽。關閉後恢復原生預覽。連續預覽支援捲動同步、全文搜尋與標題跳轉，此檢視不載入其他擴充功能的預覽腳本。",
+    "通过 VS Code 预览按钮与命令打开时，至少 256,000 字符的 Markdown 文件自动使用连续预览；小文件保持原生预览。关闭后恢复原生预览。连续预览支持滚动同步、全文搜索与标题跳转，此视图不加载其他扩展的预览脚本。",
+  ],
   [
     "capability.untrusted",
     "Preview themes and fonts work in Restricted Mode. Export requires a trusted workspace.",
@@ -133,9 +145,9 @@ export const manifest = [
   ],
   [
     "setting.math.preview.enabled",
-    "Use PMP math in the native preview. Disable to restore the previous math provider; the preview theme still applies.",
-    "在原生預覽使用 PMP 公式。關閉後恢復原有公式處理方式，預覽主題仍會生效。",
-    "在原生预览使用 PMP 公式。关闭后恢复原有公式处理方式，预览主题仍会生效。",
+    "Render formulas with PMP in previews. When disabled, the native preview can use another math provider; the continuous preview shows ordinary Markdown. The preview theme still applies.",
+    "在預覽使用 PMP 公式。關閉時，原生預覽可使用其他公式處理方式，連續預覽則顯示一般 Markdown；預覽主題仍會生效。",
+    "在预览使用 PMP 公式。关闭时，原生预览可使用其他公式处理方式，连续预览则显示普通 Markdown；预览主题仍会生效。",
   ],
   [
     "setting.math.export.enabled",
@@ -236,6 +248,23 @@ export const manifest = [
 ];
 
 export const runtime = [
+  [
+    "The continuous preview did not open.",
+    "無法開啟連續預覽。",
+    "无法打开连续预览。",
+  ],
+  ["Headings", "標題", "标题"],
+  ["Find", "搜尋", "搜索"],
+  ["Find in document", "在文件中搜尋", "在文档中搜索"],
+  ["Previous match", "上一個結果", "上一个结果"],
+  ["Next match", "下一個結果", "下一个结果"],
+  ["Close", "關閉", "关闭"],
+  ["Markdown preview", "Markdown 預覽", "Markdown 预览"],
+  ["Preparing preview…", "正在準備預覽…", "正在准备预览…"],
+  ["Could not prepare preview: {0}", "無法準備預覽：{0}", "无法准备预览：{0}"],
+  ["Go to heading", "跳至標題", "跳转到标题"],
+  ["Line {0}", "第 {0} 行", "第 {0} 行"],
+  ["Preview: {0}", "預覽：{0}", "预览：{0}"],
   ["Markdown PMP", "Markdown PMP", "Markdown PMP"],
   [
     "Another math preview provider is enabled: {0}. Keep only one enabled to avoid parsing and font conflicts.",
