@@ -3,9 +3,14 @@ const vscode = require("vscode");
 const path = require("node:path");
 const crypto = require("node:crypto");
 const { t, getLanguage } = require("./i18n.cjs");
-const { getSettings, affectsSettings } = require("./settings.cjs");
+const {
+  getSettings,
+  affectsSettings,
+  getPreviewMenuSuppression,
+} = require("./settings.cjs");
 const { escapeHtml, assetUrl } = require("./render.cjs");
-const { variableCss, cssValue } = require("./theme.cjs");
+const { variableCss, cssValue, PALETTES } = require("./theme.cjs");
+const { forwardLocation, sourceLocation } = require("./preview-source.cjs");
 const {
   renderLargeDocument,
   chunkAtLine,
@@ -20,20 +25,47 @@ const isLargeDocument = (doc) =>
 
 function createLargePreview(
   context,
-  { readOptions, readMath, log, onActivate },
+  { readOptions, readMath, log, onActivate, nativeSource },
 ) {
   const previews = new Set();
   const nativeOptions = new Map();
+  const sourcePositions = new Map();
+  const documents = new WeakMap();
+  let configurationRevision = 0;
   const subscriptions = [];
   const editorReveals = new WeakMap();
-  let active;
+  let active, sourceMarker, sourceMarkerTimer;
   const error = (e) => log.appendLine(e.stack || String(e));
   const settings = (uri) => vscode.workspace.getConfiguration("markdown", uri);
-  const enabled = () => getSettings(vscode).get("largePreview.enabled", true);
+  const shouldUsePmp = (doc) => {
+    if (doc.languageId !== "markdown") return false;
+    const config = getSettings(vscode);
+    return (
+      config.get("preview.usePmpForAllFiles", false) ||
+      (config.get("largePreview.enabled", true) && isLargeDocument(doc))
+    );
+  };
+  const title = (doc) =>
+    isLargeDocument(doc)
+      ? t("Long Preview-{0}", path.basename(doc.fileName))
+      : path.basename(doc.fileName);
+  const suppressAltMenus = () =>
+    process.platform === "win32" && getPreviewMenuSuppression(vscode);
   const forDocument = (uri) =>
     [...previews].filter(
       (state) => state.document.uri.toString() === uri.toString(),
     );
+  function rememberSource(editor) {
+    const start = editor?.visibleRanges[0]?.start;
+    if (!start || editor.document.languageId !== "markdown") return;
+    sourcePositions.set(editor.document.uri.toString(), {
+      line:
+        start.line +
+        start.character / (editor.document.lineAt(start.line).text.length + 2),
+      column: editor.viewColumn,
+    });
+  }
+  for (const editor of vscode.window.visibleTextEditors) rememberSource(editor);
   function html(state) {
     const webview = state.panel.webview;
     const nonce = crypto.randomBytes(18).toString("base64");
@@ -59,10 +91,10 @@ function createLargePreview(
       <link rel="stylesheet" href="${nativeUrl("markdown.css")}"><link rel="stylesheet" href="${nativeUrl("highlight.css")}">
       <link rel="stylesheet" href="${url("fonts.css")}"><link rel="stylesheet" href="${url("preview.css")}">
       <link rel="stylesheet" href="${url("math/math.css")}"><link rel="stylesheet" href="${url("large-preview.css")}"><style id="pmp-variables"></style>
-      <script nonce="${nonce}" src="${url("large-preview.js")}" defer></script></head><body>
+      <script nonce="${nonce}" src="${url("preview-keyboard.js")}" defer></script><script nonce="${nonce}" src="${url("preview-locate.js")}" defer></script><script nonce="${nonce}" src="${url("large-preview.js")}" defer></script></head><body data-pmp-suppress-alt-menus="${suppressAltMenus()}">
       <span id="pmp-theme-marker" hidden></span><nav id="pmp-tools"><button id="pmp-headings" type="button">${escapeHtml(t("Headings"))}</button><button id="pmp-show-find" type="button">${escapeHtml(t("Find"))}</button></nav>
       <div id="pmp-find" role="search" hidden><input id="pmp-query" aria-label="${escapeHtml(t("Find in document"))}" placeholder="${escapeHtml(t("Find in document"))}"><span id="pmp-count" aria-live="polite"></span><button id="pmp-find-previous" title="${escapeHtml(t("Previous match"))}" aria-label="${escapeHtml(t("Previous match"))}">↑</button><button id="pmp-find-next" title="${escapeHtml(t("Next match"))}" aria-label="${escapeHtml(t("Next match"))}">↓</button><button id="pmp-find-close" title="${escapeHtml(t("Close"))}" aria-label="${escapeHtml(t("Close"))}">×</button></div>
-      <main id="pmp-content" class="markdown-body" tabindex="-1" aria-label="${escapeHtml(t("Markdown preview"))}"></main><div id="pmp-message" role="status">${escapeHtml(t("Preparing preview…"))}</div></body></html>`;
+      <main id="pmp-content" class="markdown-body" tabindex="-1" aria-label="${escapeHtml(t("Markdown preview"))}"></main><div id="pmp-message" role="status">${escapeHtml(t("Preparing preview..."))}</div></body></html>`;
   }
   function modelMessage(state, line) {
     const model = state.model;
@@ -76,7 +108,14 @@ function createLargePreview(
       line,
       chunk: id ? model.idChunks[id] : chunkAtLine(model, line),
       id,
+      locate: Boolean(state.pendingLocate),
+      location: state.pendingLocate ? state.locateContext : undefined,
       model: {
+        suppressAltMenus: suppressAltMenus(),
+        forwardSearchIndicator: getSettings(vscode).get(
+          "preview.forwardSearchIndicator",
+          "rectangle",
+        ),
         themed: state.options.theme !== "default",
         doubleClickToSwitchToEditor: settings(state.document.uri).get(
           "preview.doubleClickToSwitchToEditor",
@@ -97,48 +136,79 @@ function createLargePreview(
     if (state.ready && state.model) {
       void state.panel.webview.postMessage(modelMessage(state, line));
       state.initialAnchor = undefined;
+      state.pendingLocate = false;
     }
+  }
+  function focusPreview(state) {
+    if (!state.focusRequested || !state.ready || !state.panel.active) return;
+    state.focusRequested = false;
+    state.panel.reveal(state.panel.viewColumn, false);
+    void state.panel.webview.postMessage({ type: "focus" });
   }
   function render(state) {
     if (state.disposed) return;
+    if (state.model) {
+      state.startedAt = performance.now();
+      state.timings = {};
+    }
     try {
       const doc = state.document;
-      const options = readOptions(doc.uri);
-      const config = settings(doc.uri);
-      const root = vscode.workspace.getWorkspaceFolder(doc.uri)?.uri;
-      const model = renderLargeDocument(doc.getText(), {
-        theme: options.theme,
-        breaks: config.get("preview.breaks", false),
-        linkify: config.get("preview.linkify", true),
-        typographer: config.get("preview.typographer", false),
-        frontMatter: config.get("preview.frontMatter", "table"),
-        math: readMath("preview"),
-        assetUri(value) {
-          const uri = vscode.Uri.parse(
-            assetUrl(value, doc.uri.toString(), root?.toString()),
-          );
-          return ["file", "vscode-remote"].includes(uri.scheme)
-            ? state.panel.webview.asWebviewUri(uri).toString()
-            : uri.toString();
-        },
-      });
-      const family =
-        config.get("preview.fontFamily", "") ||
-        '-apple-system,BlinkMacSystemFont,"Segoe WPC","Segoe UI",system-ui,Ubuntu,"Droid Sans",sans-serif';
-      const codeFamily = vscode.workspace
-        .getConfiguration("editor", doc.uri)
-        .get("fontFamily", "monospace");
-      state.css = `:root{--markdown-font-family:${cssValue(family)};--markdown-font-size:${Number(config.get("preview.fontSize", 14))}px;--markdown-line-height:${Number(config.get("preview.lineHeight", 1.6))};--vscode-editor-font-family:${cssValue(codeFamily)}}html{padding:0}body{color:var(--vscode-editor-foreground);background:var(--vscode-editor-background);box-sizing:border-box}code{font-family:var(--vscode-editor-font-family)}${options.theme === "default" ? "" : variableCss(options)}`;
-      state.options = options;
+      state.panel.title = title(doc);
+      const cached = documents.get(doc);
+      if (
+        cached?.version === doc.version &&
+        cached.configurationRevision === configurationRevision
+      ) {
+        state.options = cached.options;
+        state.css = cached.css;
+        state.model = cached.model;
+      } else {
+        const options = readOptions(doc.uri);
+        const config = settings(doc.uri);
+        const root = vscode.workspace.getWorkspaceFolder(doc.uri)?.uri;
+        const model = renderLargeDocument(doc.getText(), {
+          theme: options.theme,
+          breaks: config.get("preview.breaks", false),
+          linkify: config.get("preview.linkify", true),
+          typographer: config.get("preview.typographer", false),
+          frontMatter: config.get("preview.frontMatter", "table"),
+          math: readMath("preview"),
+          assetUri(value) {
+            const uri = vscode.Uri.parse(
+              assetUrl(value, doc.uri.toString(), root?.toString()),
+            );
+            return ["file", "vscode-remote"].includes(uri.scheme)
+              ? state.panel.webview.asWebviewUri(uri).toString()
+              : uri.toString();
+          },
+        });
+        const family =
+          config.get("preview.fontFamily", "") ||
+          '-apple-system,BlinkMacSystemFont,"Segoe WPC","Segoe UI",system-ui,Ubuntu,"Droid Sans",sans-serif';
+        const codeFamily = vscode.workspace
+          .getConfiguration("editor", doc.uri)
+          .get("fontFamily", "monospace");
+        state.css = `:root{--markdown-font-family:${cssValue(family)};--markdown-font-size:${Number(config.get("preview.fontSize", 14))}px;--markdown-line-height:${Number(config.get("preview.lineHeight", 1.6))};--vscode-editor-font-family:${cssValue(codeFamily)}}html{padding:0}body{color:var(--vscode-editor-foreground);background:var(--vscode-editor-background);box-sizing:border-box}code{font-family:var(--vscode-editor-font-family)}${options.theme === "default" ? "" : variableCss(options)}`;
+        state.options = options;
+        state.model = model;
+        documents.set(doc, {
+          version: doc.version,
+          configurationRevision,
+          options,
+          css: state.css,
+          model,
+        });
+      }
+      const model = state.model;
       state.error = undefined;
-      state.model = model;
       state.renderPending = false;
       state.revision++;
       state.search = undefined;
       state.line = Math.min(state.line, model.lineCount - 1);
       log.appendLine(
-        `[Preview] ${path.basename(doc.fileName)}: ${model.chunks.length} chunks, ${model.renderMs} ms`,
+        `[Preview] ${path.basename(doc.fileName)}: ${model.chunks.length} chunks, ${cached?.model === model ? "cached" : `${model.renderMs} ms`}`,
       );
+      focusPreview(state);
       sendDocument(state);
     } catch (e) {
       state.renderPending = false;
@@ -150,9 +220,20 @@ function createLargePreview(
       });
     }
   }
-  function reveal(state, line, anchor, syncSource = false) {
+  function reveal(
+    state,
+    line,
+    anchor,
+    syncSource = false,
+    locate = false,
+    location,
+  ) {
     state.line = Math.max(0, Math.min(state.document.lineCount - 1, line));
-    if (state.renderPending) return;
+    if (locate) {
+      state.pendingLocate = true;
+      state.locateContext = location;
+    }
+    if (state.renderPending || !state.ready) return;
     void state.panel.webview.postMessage({
       type: "reveal",
       revision: state.revision,
@@ -160,30 +241,61 @@ function createLargePreview(
       chunk: anchor?.chunk ?? chunkAtLine(state.model, state.line),
       id: anchor?.id,
       syncSource,
+      locate,
+      location,
     });
+    state.pendingLocate = false;
   }
-  function sourceEditor(state, line, focus = false) {
+  function markSource(editor, position) {
+    clearTimeout(sourceMarkerTimer);
+    sourceMarker?.dispose();
+    const theme = readOptions(editor.document.uri).theme;
+    sourceMarker = vscode.window.createTextEditorDecorationType({
+      isWholeLine: true,
+      borderWidth: "1px",
+      borderStyle: "solid",
+      borderColor:
+        PALETTES[theme]?.accent || new vscode.ThemeColor("focusBorder"),
+    });
+    editor.setDecorations(sourceMarker, [new vscode.Range(position, position)]);
+    sourceMarkerTimer = setTimeout(() => {
+      sourceMarker.dispose();
+      sourceMarker = undefined;
+    }, 500);
+  }
+  function sourceEditor(state, line, focus = false, sameTab = false, location) {
     const revealEditor = (editor) => {
       const sourceLine = Math.max(
         0,
         Math.min(editor.document.lineCount - 1, Math.floor(line)),
       );
-      const wraps =
-        vscode.workspace
-          .getConfiguration("editor", editor.document.uri)
-          .get("wordWrap", "off") !== "off";
-      const character = wraps
-        ? Math.round(
-            (line % 1) * editor.document.lineAt(sourceLine).text.length,
-          )
-        : 0;
+      const character = Math.min(
+        editor.document.lineAt(sourceLine).text.length,
+        location?.character ??
+          Math.floor(
+            (line % 1) * (editor.document.lineAt(sourceLine).text.length + 2),
+          ),
+      );
       const position = new vscode.Position(sourceLine, character);
       editorReveals.set(editor, Date.now() + 200);
       if (focus) editor.selection = new vscode.Selection(position, position);
       editor.revealRange(
-        new vscode.Range(position, position),
-        vscode.TextEditorRevealType.AtTop,
+        new vscode.Range(
+          position,
+          location
+            ? position
+            : new vscode.Position(
+                Math.min(sourceLine + 1, editor.document.lineCount - 1),
+                sourceLine + 1 < editor.document.lineCount
+                  ? 0
+                  : editor.document.lineAt(sourceLine).text.length,
+              ),
+        ),
+        location
+          ? vscode.TextEditorRevealType.InCenter
+          : vscode.TextEditorRevealType.AtTop,
       );
+      if (location) markSource(editor, position);
     };
     const editors = vscode.window.visibleTextEditors.filter(
       (editor) =>
@@ -191,12 +303,39 @@ function createLargePreview(
     );
     if (editors.length && !focus)
       for (const editor of editors) revealEditor(editor);
-    else if (focus)
-      void vscode.window
+    else if (focus) {
+      const tab = vscode.window.tabGroups.activeTabGroup.activeTab;
+      if (
+        (sameTab || state.sourceColumn === state.panel.viewColumn) &&
+        tab?.input instanceof vscode.TabInputCustom &&
+        tab.input.viewType === VIEW_TYPE &&
+        tab.input.uri.toString() === state.document.uri.toString()
+      ) {
+        // Match native same-tab Markdown preview lifecycle. Reopening preserves
+        // the shared working copy, including unsaved edits, and disposes the
+        // outgoing webview instead of keeping it behind a second source tab.
+        return vscode.commands
+          .executeCommand("workbench.action.reopenTextEditor")
+          .then(() => {
+            const editor = vscode.window.activeTextEditor;
+            if (
+              editor?.document.uri.toString() === state.document.uri.toString()
+            )
+              revealEditor(editor);
+          }, error);
+      }
+      return vscode.window
         .showTextDocument(state.document, {
-          viewColumn: editors[0]?.viewColumn || vscode.ViewColumn.One,
+          viewColumn: sameTab
+            ? state.panel.viewColumn
+            : editors.find((editor) => editor.viewColumn === state.sourceColumn)
+                ?.viewColumn ||
+              editors[0]?.viewColumn ||
+              state.sourceColumn ||
+              state.panel.viewColumn,
         })
         .then(revealEditor, error);
+    }
   }
   async function link(state, href) {
     if (href.startsWith("#")) {
@@ -226,7 +365,7 @@ function createLargePreview(
         const doc = await vscode.workspace.openTextDocument(
           uri.with({ fragment: "" }),
         );
-        if (isLargeDocument(doc) && enabled()) {
+        if (shouldUsePmp(doc)) {
           const next = await open(doc.uri);
           if (uri.fragment) await link(next, "#" + uri.fragment);
           return;
@@ -238,7 +377,9 @@ function createLargePreview(
   async function receive(state, message) {
     if (message.type === "ready") {
       state.ready = true;
-      if (Number.isFinite(message.line)) state.line = message.line;
+      if (Number.isFinite(message.line) && !state.pendingLocate)
+        state.line = message.line;
+      focusPreview(state);
       sendDocument(state);
       if (state.error)
         void state.panel.webview.postMessage({
@@ -248,7 +389,18 @@ function createLargePreview(
       return;
     }
     if (!state.model || message.revision !== state.revision) return;
-    if (message.type === "chunks") {
+    if (
+      message.type === "paint" &&
+      ["content", "fonts"].includes(message.phase)
+    ) {
+      const elapsed = Math.round(performance.now() - state.startedAt);
+      state.timings[message.phase] = elapsed;
+      if (message.phase === "content" && message.fontsReady)
+        state.timings.fonts ??= elapsed;
+      log.appendLine(
+        `[Preview] ${path.basename(state.document.fileName)}: ${message.phase} visible after ${elapsed} ms`,
+      );
+    } else if (message.type === "chunks") {
       const chunks = message.indices
         .filter((index) => Number.isInteger(index) && state.model.chunks[index])
         .map((index) => ({ index, html: state.model.chunks[index].html }));
@@ -290,9 +442,23 @@ function createLargePreview(
         { placeHolder: t("Go to heading") },
       );
       if (pick) reveal(state, pick.heading.line, undefined, true);
-    } else if (message.type === "source" && Number.isFinite(message.line))
-      sourceEditor(state, message.line, true);
-    else if (message.type === "link" && typeof message.href === "string")
+    } else if (message.type === "source" && Number.isFinite(message.line)) {
+      if (
+        !settings(state.document.uri).get(
+          "preview.doubleClickToSwitchToEditor",
+          true,
+        )
+      )
+        return;
+      const location = sourceLocation(
+        state.document,
+        state.model.blocks,
+        message,
+        vscode.Position,
+        vscode.Range,
+      );
+      await sourceEditor(state, location.line, true, false, location);
+    } else if (message.type === "link" && typeof message.href === "string")
       await link(state, message.href);
   }
   function attach(doc, panel, options = {}) {
@@ -311,7 +477,7 @@ function createLargePreview(
         x.document.uri.toString() === key &&
         (!options.sourceColumn || x.viewColumn === options.sourceColumn),
     );
-    panel.title = t("Preview: {0}", path.basename(doc.fileName));
+    panel.title = title(doc);
     panel.webview.options = {
       enableScripts: true,
       localResourceRoots: roots,
@@ -323,10 +489,17 @@ function createLargePreview(
         ? options.initialLine
         : editor?.visibleRanges[0]?.start.line || 0,
       initialAnchor: options.fragment,
+      pendingLocate: Boolean(options.locate),
+      locateContext: options.location,
       revision: 0,
       ready: false,
       disposed: false,
+      focusRequested: options.preserveFocus !== true,
       nativeContext: Boolean(options.nativeContext),
+      sourceColumn:
+        options.sourceColumn || editor?.viewColumn || panel.viewColumn,
+      startedAt: options.startedAt || performance.now(),
+      timings: {},
     };
     previews.add(state);
     if (panel.active) {
@@ -343,13 +516,17 @@ function createLargePreview(
       if (panel.active) {
         active = state;
         onActivate(doc.uri);
+        focusPreview(state);
       }
     });
     panel.webview.onDidReceiveMessage((message) => {
       void receive(state, message).catch(error);
     });
     panel.webview.html = html(state);
-    render(state);
+    state.renderPending = true;
+    // Finish resolving the custom editor before starting document work, so the
+    // native tab handoff can complete even for a formula-heavy document.
+    state.timer = setTimeout(() => render(state), 0);
     return state;
   }
   async function open(uri, beside = true) {
@@ -391,15 +568,123 @@ function createLargePreview(
         (state) => state.panel.viewColumn === options.viewColumn,
       );
       if (!state) throw new Error(t("The continuous preview did not open."));
-      state.nativeContext = true;
-      if (state.ready && Number.isFinite(options.initialLine))
-        reveal(state, options.initialLine);
+      state.nativeContext = options.nativeContext !== false;
+      state.focusRequested = options.preserveFocus !== true;
+      focusPreview(state);
+      if (Number.isFinite(options.initialLine))
+        reveal(
+          state,
+          options.initialLine,
+          undefined,
+          false,
+          options.locate,
+          options.location,
+        );
       if (state.ready && options.fragment)
         await link(state, "#" + options.fragment);
       return state;
     } finally {
       nativeOptions.delete(key);
     }
+  }
+  async function toggle() {
+    const tab = vscode.window.tabGroups.activeTabGroup.activeTab;
+    const current = [...previews].find(
+      (state) =>
+        tab?.input instanceof vscode.TabInputCustom &&
+        tab.input.viewType === VIEW_TYPE &&
+        tab.input.uri.toString() === state.document.uri.toString() &&
+        state.panel.viewColumn === tab.group.viewColumn,
+    );
+    if (current) {
+      return sourceEditor(current, current.line, true, true);
+    }
+    if (
+      tab?.input instanceof vscode.TabInputCustom &&
+      tab.input.viewType === "vscode.markdown.preview.editor"
+    )
+      return vscode.commands.executeCommand(
+        "workbench.action.reopenTextEditor",
+      );
+    if (
+      tab?.input instanceof vscode.TabInputWebview &&
+      /(?:^|-)markdown\.preview$/.test(tab.input.viewType)
+    ) {
+      const source = nativeSource?.(tab);
+      if (!source) return vscode.commands.executeCommand("markdown.showSource");
+      await sourceEditor(
+        {
+          document: source.document,
+          panel: { viewColumn: tab.group.viewColumn },
+          sourceColumn: tab.group.viewColumn,
+        },
+        source.line,
+        true,
+        true,
+      );
+      await vscode.window.tabGroups.close(tab, true);
+      return;
+    }
+    const editor = vscode.window.activeTextEditor;
+    if (!editor || !shouldUsePmp(editor.document))
+      return vscode.commands.executeCommand("markdown.togglePreview");
+    const start = editor.visibleRanges[0]?.start;
+    const line = start
+      ? start.line +
+        start.character / (editor.document.lineAt(start.line).text.length + 2)
+      : 0;
+    await openNative(
+      editor.document.uri,
+      {
+        viewColumn: editor.viewColumn,
+        sourceColumn: editor.viewColumn,
+        initialLine: line,
+        nativeContext: true,
+        startedAt: performance.now(),
+      },
+      () => vscode.commands.executeCommand("reopenActiveEditorWith", VIEW_TYPE),
+    );
+  }
+  async function forwardSearch() {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor || editor.document.languageId !== "markdown") return;
+    const column = editor.viewColumn || vscode.ViewColumn.One;
+    const targetColumn = column + 1;
+    const line = editor.selection.active.line;
+    const location = forwardLocation(
+      editor.document,
+      editor.selection.active,
+      readMath("preview"),
+    );
+    const preserveSource = async () => {
+      if (vscode.window.tabGroups.activeTabGroup.viewColumn !== column)
+        await vscode.window.showTextDocument(editor.document, {
+          viewColumn: column,
+          preserveFocus: false,
+          preview: false,
+        });
+    };
+    const existing = forDocument(editor.document.uri).find(
+      (state) => state.panel.viewColumn === targetColumn,
+    );
+    if (existing) {
+      existing.sourceColumn = column;
+      existing.panel.reveal(targetColumn, true);
+      reveal(existing, line, undefined, false, true, location);
+      await preserveSource();
+      return;
+    }
+    await openNative(editor.document.uri, {
+      viewColumn: targetColumn,
+      sourceColumn: column,
+      initialLine: line,
+      locate: true,
+      location,
+      preserveFocus: true,
+      nativeContext: false,
+      startedAt: performance.now(),
+    });
+    await preserveSource();
   }
   subscriptions.push(
     vscode.window.registerCustomEditorProvider(
@@ -424,13 +709,12 @@ function createLargePreview(
       },
     ),
     vscode.window.onDidChangeTextEditorVisibleRanges((event) => {
+      rememberSource(event.textEditor);
       const until = editorReveals.get(event.textEditor);
       if (until) {
-        if (
-          until > Date.now() &&
-          vscode.window.activeTextEditor !== event.textEditor
-        )
-          return;
+        // A custom text preview can leave activeTextEditor pointing at its
+        // source. Ignore our reveal events regardless of that focus snapshot.
+        if (until > Date.now()) return;
         editorReveals.delete(event.textEditor);
       }
       if (
@@ -450,11 +734,12 @@ function createLargePreview(
           continue;
         const length = event.textEditor.document.lineAt(position.line).text
           .length;
-        reveal(
-          state,
-          position.line + (length ? position.character / length : 0),
-        );
+        reveal(state, position.line + position.character / (length + 2));
       }
+    }),
+    vscode.window.onDidChangeActiveTextEditor(rememberSource),
+    vscode.workspace.onDidCloseTextDocument((document) => {
+      sourcePositions.delete(document.uri.toString());
     }),
     vscode.workspace.onDidChangeTextDocument((event) => {
       if (!event.contentChanges.length) return;
@@ -472,8 +757,9 @@ function createLargePreview(
         event.affectsConfiguration("markdown") ||
         event.affectsConfiguration("editor.fontFamily")
       ) {
+        configurationRevision++;
         for (const state of previews.values()) {
-          if (state.nativeContext && !enabled()) continue;
+          if (state.nativeContext && !shouldUsePmp(state.document)) continue;
           clearTimeout(state.timer);
           state.timer = setTimeout(() => render(state), 80);
         }
@@ -484,14 +770,22 @@ function createLargePreview(
     viewType: VIEW_TYPE,
     open,
     openNative,
+    toggle,
+    forwardSearch,
+    sourcePosition(uri) {
+      return sourcePositions.get(uri.toString());
+    },
     get previews() {
       return [...previews];
     },
     isLargeDocument,
+    shouldUsePmp,
     get activeDocument() {
       return active?.panel.active ? active.document.uri : undefined;
     },
     dispose() {
+      clearTimeout(sourceMarkerTimer);
+      sourceMarker?.dispose();
       for (const item of subscriptions) item.dispose();
       for (const state of previews.values()) state.panel.dispose();
     },

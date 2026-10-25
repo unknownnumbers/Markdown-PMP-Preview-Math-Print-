@@ -50,6 +50,7 @@ function installPreview(
   variableCss,
   onError,
   onNativePreview,
+  getSuppressAltMenus,
 ) {
   if (md[INSTALLED]) return md;
   md[INSTALLED] = true;
@@ -60,6 +61,7 @@ function installPreview(
       settings = {
         options: getOptions(env?.currentDocument),
         math: getMath(),
+        suppressAltMenus: getSuppressAltMenus?.(),
       };
       return action();
     } finally {
@@ -123,8 +125,12 @@ function installPreview(
   const render = md.renderer.render;
   md.renderer.render = function (tokens, options, env = {}) {
     return withSettings(env, () => {
+      const keyboard =
+        typeof settings.suppressAltMenus === "boolean"
+          ? `\n<span class="pmp-preview-keyboard" data-pmp-suppress-alt-menus="${settings.suppressAltMenus}" hidden></span>`
+          : "";
       if (onNativePreview?.(tokens, env))
-        return `<p>${t("Preparing preview…")}</p>`;
+        return `<p>${t("Preparing preview...")}</p>${keyboard}`;
       // Macro definitions are document-local, including repeated renders of cached tokens.
       delete env.inkpageMacros;
       delete env.inkpageMathErrors;
@@ -148,8 +154,8 @@ function installPreview(
       });
       const html = render.call(this, renderTokens, options, env);
       return enhanced()
-        ? `${html}\n<span class="inkpage-theme-marker"${html.length >= 256_000 ? " data-pmp-batch-fonts" : ""} hidden></span><style data-inkpage-theme>${variableCss(readOptions())}</style>`
-        : html;
+        ? `${html}${keyboard}\n<span class="inkpage-theme-marker"${html.length >= 256_000 ? " data-pmp-batch-fonts" : ""} hidden></span><style data-inkpage-theme>${variableCss(readOptions())}</style>`
+        : html + keyboard;
     });
   };
   return md;

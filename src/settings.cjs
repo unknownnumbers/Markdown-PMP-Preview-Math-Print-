@@ -44,4 +44,23 @@ function affectsSettings(event) {
   );
 }
 
-module.exports = { SETTINGS_SECTION, getSettings, affectsSettings };
+function getPreviewMenuSuppression(vscode, native = false) {
+  const key = native
+    ? "nativePreview.suppressAltMenus"
+    : "preview.suppressAltMenus";
+  const previous = native
+    ? "nativePreview.suppressAltSMenu"
+    : "largePreview.suppressAltSMenu";
+  const current = vscode.workspace.getConfiguration(SETTINGS_SECTION);
+  if (hasExplicitValue(current.inspect(key))) return current.get(key, true);
+  if (hasExplicitValue(current.inspect(previous)))
+    return current.get(previous, true);
+  return current.get(key, true);
+}
+
+module.exports = {
+  SETTINGS_SECTION,
+  getSettings,
+  affectsSettings,
+  getPreviewMenuSuppression,
+};

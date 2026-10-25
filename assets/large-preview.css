@@ -106,6 +106,47 @@ html.pmp-themed:not(.pmp-fonts-ready) body {
   background: var(--vscode-editor-findMatchBackground, #f6d45b);
   color: var(--vscode-editor-foreground);
 }
+.pmp-forward-highlight {
+  --pmp-forward-color: var(--vscode-focusBorder, #007fd4);
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  background: var(--vscode-editor-findMatchHighlightBackground, #4090ff66);
+  animation: pmp-forward-fade 1s linear forwards;
+}
+.pmp-themed .pmp-forward-highlight {
+  --pmp-forward-color: var(--inkpage-accent);
+  background: color-mix(in srgb, var(--inkpage-accent) 40%, transparent);
+}
+.pmp-forward-highlight.pmp-forward-circle {
+  background: transparent;
+  border: 0.2em solid var(--pmp-forward-color);
+  border-radius: 50%;
+  box-sizing: content-box;
+  transform: translate(-50%, -50%);
+  animation: pmp-forward-circle 0.5s ease forwards;
+}
+@keyframes pmp-forward-circle {
+  from {
+    opacity: 0.8;
+    width: 0.5em;
+    height: 0.5em;
+  }
+  to {
+    opacity: 0;
+    width: 5em;
+    height: 5em;
+  }
+}
+@keyframes pmp-forward-fade {
+  0%,
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
 .pmp-table-sample {
   position: fixed;
   left: -20000px;

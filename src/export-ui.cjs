@@ -41,7 +41,7 @@ async function captureTheme(resource, signal) {
   if (signal?.aborted) throw abortError();
   const panel = vscode.window.createWebviewPanel(
     "Markdown-PMP.captureTheme",
-    t("Markdown PMP · Preparing Export"),
+    t("Markdown PMP - Preparing Export"),
     { viewColumn: vscode.ViewColumn.Active, preserveFocus: true },
     { enableScripts: true, localResourceRoots: [] },
   );
@@ -79,14 +79,14 @@ async function captureTheme(resource, signal) {
     });
     const closed = panel.onDidDispose(() => finish(abortError()));
     signal?.addEventListener("abort", aborted, { once: true });
-    panel.webview.html = `<!doctype html><html lang="${escape(vscode.env.language)}"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none';style-src 'unsafe-inline';script-src 'nonce-${nonce}'"><style>body{font-family:var(--vscode-font-family);color:var(--vscode-editor-foreground);padding:24px}</style></head><body><p>${escape(t("Preparing Default export styles…"))}</p><script nonce="${nonce}">const api=acquireVsCodeApi();requestAnimationFrame(()=>requestAnimationFrame(()=>{const data=(()=>{${collectThemeScript()}})();api.postMessage({type:'theme',data})}));</script></body></html>`;
+    panel.webview.html = `<!doctype html><html lang="${escape(vscode.env.language)}"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none';style-src 'unsafe-inline';script-src 'nonce-${nonce}'"><style>body{font-family:var(--vscode-font-family);color:var(--vscode-editor-foreground);padding:24px}</style></head><body><p>${escape(t("Preparing Default export styles..."))}</p><script nonce="${nonce}">const api=acquireVsCodeApi();requestAnimationFrame(()=>requestAnimationFrame(()=>{const data=(()=>{${collectThemeScript()}})();api.postMessage({type:'theme',data})}));</script></body></html>`;
   });
 }
 
 async function exportSettings(format, defaults, theme) {
   const panel = vscode.window.createWebviewPanel(
     "Markdown-PMP.exportSettings",
-    t("Markdown PMP · Export Settings"),
+    t("Markdown PMP - Export Settings"),
     vscode.ViewColumn.Active,
     { enableScripts: true, localResourceRoots: [] },
   );
@@ -104,8 +104,8 @@ async function exportSettings(format, defaults, theme) {
           `<label class="check"><input type="checkbox" name="${key}" value="${id}" ${values.includes(id) ? "checked" : ""}>${escape(t(label))}</label>`,
       )
       .join("")}</fieldset>`;
-  const pdf = `<label>${escape(t("Paper"))}<select name="paper">${[...Object.keys(PAPERS), "Custom"].map((x) => `<option value="${x}" ${defaults.paper === x ? "selected" : ""}>${x === "Custom" ? escape(t("Custom")) : x}</option>`).join("")}</select></label>${input("width", "Custom width (mm)", defaults.width)}${input("height", "Custom height (mm)", defaults.height)}<label class="check"><input type="checkbox" name="landscape" ${defaults.landscape ? "checked" : ""}>${escape(t("Landscape"))}</label>${["top", "right", "bottom", "left"].map((s, i) => input(s, ["Top margin (mm)", "Right margin (mm)", "Bottom margin (mm)", "Left margin (mm)"][i], defaults.margins[s])).join("")}${input("fontSize", "Body font size (pt)", defaults.fontSize, "number", 'step="0.5"')}${input("scale", "Scale (0.1–2)", defaults.scale, "number", 'step="0.1"')}${input("pageRanges", "Page ranges (empty for all)", defaults.pageRanges, "text", 'placeholder="1-5,8"')}${checks("header", "Header", defaults.header)}${checks("footer", "Footer", defaults.footer)}`;
-  const image = `${input("imageWidth", "Layout width (px)", defaults.imageWidth)}${input("imageScale", "Resolution (1–3×)", defaults.imageScale, "number", 'step="0.5"')}${format === "jpeg" ? input("jpegQuality", "JPEG quality (1–100)", defaults.jpegQuality) : ""}<p>${escape(t("Very long articles are split into consecutively numbered images."))}</p>`;
+  const pdf = `<label>${escape(t("Paper"))}<select name="paper">${[...Object.keys(PAPERS), "Custom"].map((x) => `<option value="${x}" ${defaults.paper === x ? "selected" : ""}>${x === "Custom" ? escape(t("Custom")) : x}</option>`).join("")}</select></label>${input("width", "Custom width (mm)", defaults.width)}${input("height", "Custom height (mm)", defaults.height)}<label class="check"><input type="checkbox" name="landscape" ${defaults.landscape ? "checked" : ""}>${escape(t("Landscape"))}</label>${["top", "right", "bottom", "left"].map((s, i) => input(s, ["Top margin (mm)", "Right margin (mm)", "Bottom margin (mm)", "Left margin (mm)"][i], defaults.margins[s])).join("")}${input("fontSize", "Body font size (pt)", defaults.fontSize, "number", 'step="0.5"')}${input("scale", "Scale (0.1-2)", defaults.scale, "number", 'step="0.1"')}${input("pageRanges", "Page ranges (empty for all)", defaults.pageRanges, "text", 'placeholder="1-5,8"')}${checks("header", "Header", defaults.header)}${checks("footer", "Footer", defaults.footer)}`;
+  const image = `${input("imageWidth", "Layout width (px)", defaults.imageWidth)}${input("imageScale", "Resolution (1-3x)", defaults.imageScale, "number", 'step="0.5"')}${format === "jpeg" ? input("jpegQuality", "JPEG quality (1-100)", defaults.jpegQuality) : ""}<p>${escape(t("Very long articles are split into consecutively numbered images."))}</p>`;
   const data = JSON.stringify(defaults).replace(/</g, "\\u003c");
   return new Promise((resolve) => {
     let settled = false;

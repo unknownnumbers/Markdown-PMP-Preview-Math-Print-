@@ -19,10 +19,12 @@ function walk(node, visit) {
   visit(node);
   for (const child of node.children || []) walk(child, visit);
 }
-function textOf(node) {
-  if (node.type === "text") return node.data;
+function textOf(node, content) {
+  if (node.type === "text")
+    return content ? content.text(node.data) : node.data;
+  if (node.name === "annotation") return "";
   if (node.attribs?.class?.includes("inkpage-katex-mathml")) return "";
-  return (node.children || []).map(textOf).join("");
+  return (node.children || []).map((child) => textOf(child, content)).join("");
 }
 function clone(node, children, continuation = false, more = false) {
   const copy = { ...node, attribs: { ...node.attribs }, children };
@@ -64,7 +66,7 @@ function anchorCount(node) {
   });
   return n;
 }
-function splitTable(node, tables) {
+function splitTable(node, tables, content) {
   const heads = (node.children || []).filter(
     (x) => x.name === "thead" || x.name === "caption" || x.name === "colgroup",
   );
@@ -84,7 +86,7 @@ function splitTable(node, tables) {
   const longest = [];
   rows.forEach((row, index) => {
     row.children.filter(tag).forEach((cell, column) => {
-      const length = textOf(cell).length;
+      const length = textOf(cell, content).length;
       if (!longest[column] || length > longest[column].length)
         longest[column] = { length, index };
     });
@@ -96,11 +98,22 @@ function splitTable(node, tables) {
     attribs: {},
     children,
   });
+  const widthSample = (node) =>
+    tag(node)
+      ? clone(
+          node,
+          ["td", "th"].includes(node.name)
+            ? [{ type: "text", data: textOf(node, content).slice(0, 160) }]
+            : (node.children || []).map(widthSample),
+        )
+      : node;
   tables.push(
     html(
       clone(node, [
-        ...heads,
-        tbody([...samples].sort((a, b) => a - b).map((i) => rows[i])),
+        ...heads.map(widthSample),
+        tbody(
+          [...samples].sort((a, b) => a - b).map((i) => widthSample(rows[i])),
+        ),
       ]),
     ),
   );
@@ -125,7 +138,7 @@ function splitTable(node, tables) {
   if (unit.length) units.push(unit);
   const groups = pack(
     units,
-    (x) => html(x).length,
+    (x) => x.reduce((sum, row) => sum + content.size(row), 0),
     (x) => x.length,
   ).map((x) => x.flat());
   return groups.map((group, index) => {
@@ -143,9 +156,9 @@ function splitTable(node, tables) {
     return part;
   });
 }
-function splitNode(node, tables) {
-  if (!tag(node) || html(node).length <= CHUNK_BYTES) return [node];
-  if (node.name === "table") return splitTable(node, tables);
+function splitNode(node, tables, content) {
+  if (!tag(node) || content.size(node) <= CHUNK_BYTES) return [node];
+  if (node.name === "table") return splitTable(node, tables, content);
   const isList = node.name === "ul" || node.name === "ol";
   if (
     !isList &&
@@ -153,9 +166,9 @@ function splitNode(node, tables) {
   )
     return [node];
   const children = (node.children || []).flatMap((child) =>
-    splitNode(child, tables),
+    splitNode(child, tables, content),
   );
-  const groups = pack(children, (x) => html(x).length, anchorCount);
+  const groups = pack(children, content.size, anchorCount);
   let start = Number(node.attribs?.start || 1);
   const step = Object.hasOwn(node.attribs || {}, "reversed") ? -1 : 1;
   if (step < 0 && !node.attribs.start)
@@ -175,13 +188,13 @@ function units(text) {
   const wide = (text.match(/[^\x00-\xff]/g) || []).length;
   return (text.length - wide) * 0.55 + wide;
 }
-function indexChunk(nodes) {
+function indexChunk(nodes, content) {
   let text = "";
   const anchors = [],
     ids = [];
   function visit(node) {
     if (node.type === "text") {
-      text += node.data;
+      text += content.text(node.data);
       return;
     }
     if (node.attribs?.class?.includes("inkpage-katex-mathml")) return;
@@ -213,8 +226,40 @@ function renderLargeDocument(source, options = {}) {
   const offset = (
     source.slice(0, source.length - front.source.length).match(/\n/g) || []
   ).length;
-  const env = { inkpageTrusted: new Map(), inkpageLineOffset: offset };
+  const mathText = new Map(),
+    plainMath = new Map(),
+    sizes = new WeakMap();
+  const env = {
+    inkpageTrusted: new Map(),
+    inkpageDeferMath: true,
+    inkpageLineOffset: offset,
+    inkpageIndexMath(key, result, number) {
+      if (!plainMath.has(result))
+        plainMath.set(result, textOf(parseDocument(result)));
+      mathText.set(key, plainMath.get(result) + (number ? `(${number})` : ""));
+    },
+  };
+  const content = {
+    text: (value) =>
+      value.replace(
+        /INKPAGEMATH[0-9a-f]{40}/g,
+        (key) => mathText.get(key) ?? key,
+      ),
+    size(node) {
+      if (!sizes.has(node)) {
+        const value = html(node);
+        let bytes = value.length;
+        for (const match of value.matchAll(/INKPAGEMATH[0-9a-f]{40}/g))
+          bytes +=
+            (env.inkpageTrusted.get(match[0])?.length ?? match[0].length) -
+            match[0].length;
+        sizes.set(node, bytes);
+      }
+      return sizes.get(node);
+    },
+  };
   const tokens = renderer.parse(front.source, env);
+  const blocks = Object.create(null);
   let key = 0;
   const wrapped = new Set();
   for (let i = 0; i < tokens.length; i++) {
@@ -229,22 +274,30 @@ function renderLargeDocument(source, options = {}) {
     if (!mapped) continue;
     token.attrSet("data-pmp-line", String(token.map[0] + offset));
     token.attrSet("data-pmp-end", String(token.map[1] + offset));
-    token.attrSet("data-pmp-key", String(key++));
+    const blockKey = String(key++);
+    token.attrSet("data-pmp-key", blockKey);
+    token.attrSet("data-pmp-kind", token.type);
+    blocks[blockKey] = {
+      line: token.map[0] + offset,
+      end: token.map[1] + offset,
+      kind: token.type,
+    };
     if (token.nesting === 1) token.attrSet("dir", "auto");
     else if (!wrapped.has(token.type)) {
       const original = renderer.renderer.rules[token.type];
       renderer.renderer.rules[token.type] = (ts, index, opts, state, self) => {
         const t = ts[index];
-        return `<div data-pmp-line="${t.map[0] + offset}" data-pmp-end="${t.map[1] + offset}" data-pmp-key="${t.attrGet("data-pmp-key")}">${original(ts, index, opts, state, self)}</div>`;
+        return `<div data-pmp-line="${t.map[0] + offset}" data-pmp-end="${t.map[1] + offset}" data-pmp-key="${t.attrGet("data-pmp-key")}" data-pmp-kind="${t.type}">${original(ts, index, opts, state, self)}</div>`;
       };
       wrapped.add(token.type);
     }
   }
-  let rendered = sanitizeRenderedHtml(
+  const rendered = sanitizeRenderedHtml(
     front.html + renderer.renderer.render(tokens, renderer.options, env),
     true,
   );
-  rendered = restoreMath(rendered, env);
+  // Math stays opaque while splitting and indexing. Expanding every formula
+  // here can turn a small source file into millions of offscreen DOM nodes.
   const tree = parseDocument(rendered);
   const tables = [];
   // URLs are resolved by the host using the actual document URI.
@@ -255,12 +308,20 @@ function renderLargeDocument(source, options = {}) {
         node.attribs.loading = "lazy";
       }
     });
-  const pieces = tree.children.flatMap((node) => splitNode(node, tables));
-  const groups = pack(pieces, (x) => html(x).length, anchorCount);
-  const chunks = groups.map((nodes) => ({
-    html: html(nodes),
-    ...indexChunk(nodes),
-  }));
+  const pieces = tree.children.flatMap((node) =>
+    splitNode(node, tables, content),
+  );
+  const groups = pack(pieces, content.size, anchorCount);
+  const chunks = groups.map((nodes) => {
+    const compact = html(nodes);
+    let expanded;
+    return {
+      get html() {
+        return (expanded ??= restoreMath(compact, env));
+      },
+      ...indexChunk(nodes, content),
+    };
+  });
   let previousLine = 0;
   for (const chunk of chunks) {
     chunk.line = chunk.anchors[0]?.line ?? previousLine;
@@ -276,7 +337,7 @@ function renderLargeDocument(source, options = {}) {
     walk({ children: groups[index] }, (node) => {
       if (/^h[1-6]$/.test(node.name))
         headings.push({
-          text: textOf(node),
+          text: textOf(node, content),
           level: Number(node.name[1]),
           id: node.attribs.id,
           line: Number(node.attribs["data-pmp-line"] || 0),
@@ -290,6 +351,7 @@ function renderLargeDocument(source, options = {}) {
     headings,
     idChunks,
     sourceAnchors,
+    blocks,
     lineCount: (source.match(/\n/g) || []).length + 1,
     renderMs: Math.round(performance.now() - started),
   };

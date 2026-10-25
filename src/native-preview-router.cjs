@@ -1,6 +1,6 @@
 "use strict";
 const path = require("node:path");
-const { getSettings, affectsSettings } = require("./settings.cjs");
+const { affectsSettings } = require("./settings.cjs");
 
 const NATIVE_EDITOR = "vscode.markdown.preview.editor";
 function nativeTabKind(vscode, tab) {
@@ -39,11 +39,19 @@ function createNativePreviewRouter(vscode, largePreview, log) {
   const providers = new WeakMap(),
     bindings = new Map(),
     pending = new Map(),
-    awaitingTabs = new Map();
+    awaitingTabs = new Map(),
+    opening = new Set();
   const failed = new WeakSet();
   let timer,
     disposed = false;
-  const enabled = () => getSettings(vscode).get("largePreview.enabled", true);
+  const documentFor = (uri) =>
+    vscode.workspace.textDocuments.find(
+      (document) => document.uri.toString() === uri.toString(),
+    );
+  const shouldRoute = (uri) => {
+    const doc = documentFor(uri);
+    return doc && largePreview.shouldUsePmp(doc);
+  };
   const live = (tab) =>
     vscode.window.tabGroups.all.some((group) => group.tabs.includes(tab)) &&
     nativeTabKind(vscode, tab);
@@ -73,12 +81,56 @@ function createNativePreviewRouter(vscode, largePreview, log) {
     );
   }
   function enqueue(binding) {
-    providers.set(binding.provider, binding.tab);
+    if (binding.provider) providers.set(binding.provider, binding.tab);
+    if (opening.has(binding.tab)) {
+      const current = bindings.get(binding.tab);
+      if (current && current.uri.toString() === binding.uri.toString()) {
+        current.provider ||= binding.provider;
+        return;
+      }
+    }
     bindings.set(binding.tab, binding);
     pending.set(binding.tab, binding);
     timer ??= setTimeout(() => {
       void flush().catch(report);
     }, 0);
+  }
+  function routeEarly(tab) {
+    if (!nativeTabKind(vscode, tab) || pending.has(tab) || opening.has(tab))
+      return;
+    const documents = vscode.workspace.textDocuments.filter((document) =>
+      tab.input instanceof vscode.TabInputCustom
+        ? document.uri.toString() === tab.input.uri.toString()
+        : tab.label.endsWith(path.posix.basename(document.uri.path)),
+    );
+    // Dynamic preview tabs do not expose a URI. Ambiguous filenames wait for
+    // the renderer's document metadata; a known file can open immediately.
+    if (documents.length !== 1 || !largePreview.shouldUsePmp(documents[0]))
+      return;
+    const document = documents[0];
+    const editor = vscode.window.visibleTextEditors.find(
+      (editor) => editor.document === document,
+    );
+    const start = editor?.visibleRanges[0]?.start;
+    const remembered = largePreview.sourcePosition(document.uri);
+    enqueue({
+      tab,
+      uri: document.uri,
+      initialLine: start
+        ? start.line +
+          start.character / (document.lineAt(start.line).text.length + 2)
+        : remembered?.line || 0,
+      sourceColumn:
+        editor?.viewColumn ||
+        vscode.window.activeTextEditor?.viewColumn ||
+        remembered?.column ||
+        vscode.ViewColumn.One,
+      startedAt: performance.now(),
+    });
+  }
+  function routeExisting() {
+    for (const group of vscode.window.tabGroups.all)
+      for (const tab of group.tabs) routeEarly(tab);
   }
   function bindAwaitingTabs() {
     for (const [provider, request] of awaitingTabs) {
@@ -86,7 +138,10 @@ function createNativePreviewRouter(vscode, largePreview, log) {
       if (!tab) continue;
       clearTimeout(request.expiry);
       awaitingTabs.delete(provider);
-      enqueue({ ...request, tab });
+      if (request.route === false) {
+        providers.set(provider, tab);
+        bindings.set(tab, { ...request, tab });
+      } else enqueue({ ...request, tab });
     }
   }
   async function flush() {
@@ -96,19 +151,22 @@ function createNativePreviewRouter(vscode, largePreview, log) {
     for (const binding of requests) {
       if (
         disposed ||
-        !enabled() ||
+        !shouldRoute(binding.uri) ||
         !live(binding.tab) ||
         bindings.get(binding.tab) !== binding
       )
         continue;
+      opening.add(binding.tab);
       try {
         await largePreview.openNative(
           binding.uri,
           {
             viewColumn: binding.tab.group.viewColumn,
-            initialLine: binding.provider.state?.line,
-            fragment: binding.provider.state?.fragment,
-            sourceColumn: binding.provider.state?.resourceColumn,
+            initialLine: binding.provider?.state?.line ?? binding.initialLine,
+            fragment: binding.provider?.state?.fragment,
+            sourceColumn:
+              binding.provider?.state?.resourceColumn ?? binding.sourceColumn,
+            startedAt: binding.startedAt,
             preserveFocus:
               binding.tab !== vscode.window.tabGroups.activeTabGroup.activeTab,
             nativeContext: true,
@@ -130,9 +188,11 @@ function createNativePreviewRouter(vscode, largePreview, log) {
       } catch (error) {
         report(error);
         // A failed handoff must leave a normal native render on the next refresh.
-        failed.add(binding.provider);
+        if (binding.provider) failed.add(binding.provider);
         if (live(binding.tab))
           await vscode.commands.executeCommand("markdown.preview.refresh");
+      } finally {
+        opening.delete(binding.tab);
       }
     }
   }
@@ -148,14 +208,15 @@ function createNativePreviewRouter(vscode, largePreview, log) {
     )
       return false;
     const tab = findNativeTab(vscode, uri, providers.get(provider));
-    const doc = vscode.workspace.textDocuments.find(
-      (document) => document.uri.toString() === uri.toString(),
-    );
-    if (!enabled() || !doc || !largePreview.isLargeDocument(doc)) {
+    if (!shouldRoute(uri)) {
       if (tab) {
         providers.set(provider, tab);
         bindings.set(tab, { tab, uri, provider });
         pending.delete(tab);
+      } else if (!awaitingTabs.has(provider)) {
+        const request = { uri, provider, route: false };
+        request.expiry = setTimeout(() => awaitingTabs.delete(provider), 5000);
+        awaitingTabs.set(provider, request);
       }
       return false;
     }
@@ -209,25 +270,45 @@ function createNativePreviewRouter(vscode, largePreview, log) {
           pending.delete(tab);
         }
       bindAwaitingTabs();
+      for (const tab of event.opened) routeEarly(tab);
     }),
     vscode.workspace.onDidChangeConfiguration((event) => {
-      if (affectsSettings(event) && !enabled()) {
-        pending.clear();
-        for (const request of awaitingTabs.values())
+      if (affectsSettings(event)) {
+        for (const [tab, binding] of pending)
+          if (!shouldRoute(binding.uri)) pending.delete(tab);
+        for (const [provider, request] of awaitingTabs) {
+          if (shouldRoute(request.uri)) continue;
           clearTimeout(request.expiry);
-        awaitingTabs.clear();
+          awaitingTabs.delete(provider);
+        }
+        routeExisting();
         void (async () => {
           for (const state of largePreview.previews)
-            if (state.nativeContext) await restoreNative(state);
+            if (
+              state.nativeContext &&
+              !largePreview.shouldUsePmp(state.document)
+            )
+              await restoreNative(state);
         })().catch(report);
       }
     }),
   ];
+  const startup = setTimeout(routeExisting, 0);
   return {
     onNativeRender,
+    sourceForTab(tab) {
+      const binding = bindings.get(tab);
+      const document = binding && documentFor(binding.uri);
+      if (!document) return;
+      return {
+        document,
+        line: binding.provider?.state?.line ?? binding.initialLine ?? 0,
+      };
+    },
     dispose() {
       disposed = true;
       clearTimeout(timer);
+      clearTimeout(startup);
       pending.clear();
       for (const request of awaitingTabs.values()) clearTimeout(request.expiry);
       awaitingTabs.clear();

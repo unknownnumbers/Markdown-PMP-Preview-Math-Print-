@@ -2,7 +2,7 @@
   "name": "preview-math-print",
   "displayName": "%extension.displayName%",
   "description": "%extension.description%",
-  "version": "1.0.5",
+  "version": "1.0.16",
   "publisher": "markdown-pmp",
   "license": "MIT",
   "engines": {
@@ -47,7 +47,8 @@
       "./assets/math/math.css"
     ],
     "markdown.previewScripts": [
-      "./assets/preview-fonts.js"
+      "./assets/preview-fonts.js",
+      "./assets/preview-keyboard.js"
     ],
     "markdown.markdownItPlugins": true,
     "customEditors": [
@@ -63,6 +64,24 @@
       }
     ],
     "commands": [
+      {
+        "command": "Markdown-PMP.togglePreview",
+        "title": "%command.togglePreview%",
+        "category": "%extension.category%",
+        "icon": "$(go-to-file)"
+      },
+      {
+        "command": "Markdown-PMP.forwardSearch",
+        "title": "%command.forwardSearch%",
+        "category": "%extension.category%",
+        "enablement": "editorLangId == markdown"
+      },
+      {
+        "command": "Markdown-PMP.exportPdfBeside",
+        "title": "%command.exportPdfBeside%",
+        "category": "%extension.category%",
+        "enablement": "isWorkspaceTrusted && editorLangId == markdown"
+      },
       {
         "command": "Markdown-PMP.selectTheme",
         "title": "%command.selectTheme%",
@@ -124,7 +143,7 @@
     "menus": {
       "editor/title": [
         {
-          "command": "markdown.reopenAsSource",
+          "command": "Markdown-PMP.togglePreview",
           "when": "activeCustomEditorId == 'Markdown-PMP.largePreview'",
           "group": "navigation@2"
         },
@@ -184,15 +203,25 @@
         }
       ]
     },
+    "configurationDefaults": {
+      "markdown.preview.doubleClickToSwitchToEditor": true
+    },
     "configuration": {
       "title": "%extension.category%",
       "properties": {
+        "Markdown-PMP.preview.usePmpForAllFiles": {
+          "type": "boolean",
+          "default": false,
+          "description": "%setting.preview.usePmpForAllFiles%",
+          "scope": "window",
+          "order": 0
+        },
         "Markdown-PMP.largePreview.enabled": {
           "type": "boolean",
           "default": true,
           "description": "%setting.largePreview.enabled%",
           "scope": "window",
-          "order": 0
+          "order": 1
         },
         "Markdown-PMP.theme": {
           "type": "string",
@@ -273,6 +302,38 @@
           "type": "boolean",
           "default": true,
           "description": "%setting.math.preview.enabled%",
+          "scope": "window"
+        },
+        "Markdown-PMP.preview.forwardSearchIndicator": {
+          "type": "string",
+          "enum": [
+            "rectangle",
+            "circle"
+          ],
+          "enumItemLabels": [
+            "Rectangle",
+            "Circle"
+          ],
+          "default": "rectangle",
+          "description": "%setting.preview.forwardSearchIndicator%",
+          "scope": "window"
+        },
+        "Markdown-PMP.preview.suppressAltMenus": {
+          "type": "boolean",
+          "default": true,
+          "description": "%setting.preview.suppressAltMenus%",
+          "scope": "window"
+        },
+        "Markdown-PMP.nativePreview.suppressAltMenus": {
+          "type": "boolean",
+          "default": true,
+          "description": "%setting.nativePreview.suppressAltMenus%",
+          "scope": "window"
+        },
+        "Markdown-PMP.math.fallbackToCode": {
+          "type": "boolean",
+          "default": true,
+          "description": "%setting.math.fallbackToCode%",
           "scope": "window"
         },
         "Markdown-PMP.math.export.enabled": {
@@ -464,10 +525,11 @@
   "scripts": {
     "build": "node scripts/build.mjs",
     "test": "node --test test/*.test.cjs",
-    "package": "pnpm run build && vsce package --no-dependencies --allow-missing-repository --out \"../output/Markdown PMP (Preview-Math-Print)-1.0.5.vsix\"",
+    "package": "pnpm run build && vsce package --no-dependencies --allow-missing-repository --out \"../output/Markdown PMP (Preview-Math-Print)-1.0.16.vsix\"",
     "build:l10n": "node scripts/localization-catalog.mjs"
   },
   "dependencies": {
+    "@pdf-lib/fontkit": "1.1.1",
     "dom-serializer": "2.0.0",
     "highlight.js": "11.11.1",
     "htmlparser2": "10.1.0",
@@ -477,6 +539,7 @@
     "markdown-it-footnote": "4.0.0",
     "markdown-it-task-lists": "2.1.1",
     "markdown-it-texmath": "1.0.0",
+    "pdf-lib": "1.17.1",
     "sanitize-html": "2.17.0",
     "ws": "8.18.3"
   },

@@ -1,0 +1,17 @@
+[
+  {
+    "key": "alt+b",
+    "command": "Markdown-PMP.exportPdfBeside",
+    "when": "editorTextFocus && editorLangId == 'markdown' && isWorkspaceTrusted"
+  },
+  {
+    "key": "alt+e",
+    "command": "Markdown-PMP.togglePreview",
+    "when": "editorTextFocus && editorLangId == 'markdown' || activeWebviewPanelId == 'markdown.preview' || activeCustomEditorId == 'vscode.markdown.preview.editor' || activeCustomEditorId == 'Markdown-PMP.largePreview'"
+  },
+  {
+    "key": "alt+s",
+    "command": "Markdown-PMP.forwardSearch",
+    "when": "editorTextFocus && editorLangId == 'markdown'"
+  }
+]

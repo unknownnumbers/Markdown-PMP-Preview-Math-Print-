@@ -6,6 +6,15 @@ const katex = require("katex");
 const texmath = require("markdown-it-texmath");
 const MODES = ["dollars", "brackets", "gitlab", "julia", "kramdown"];
 const INSTALLED = Symbol("inkpage.math");
+const mathClasses = (html) =>
+  html.replace(
+    /class="([^"]*)"/g,
+    (_, classes) =>
+      `class="${classes
+        .split(/\s+/)
+        .map((c) => c.replace(/^katex/, "inkpage-katex"))
+        .join(" ")}"`,
+  );
 const escape = (text) =>
   String(text).replace(
     /[&<>"']/g,
@@ -22,6 +31,7 @@ function normalizeMath(input = {}) {
       delimiters: ["dollars", "brackets"],
       macros: {},
       outerspace: false,
+      fallbackToCode: input.fallbackToCode !== false,
     };
   const delimiters = [
     ...new Set(
@@ -58,6 +68,7 @@ function normalizeMath(input = {}) {
     delimiters,
     macros: { ...macros },
     outerspace: Boolean(input.outerspace),
+    fallbackToCode: input.fallbackToCode !== false,
   };
 }
 
@@ -69,49 +80,119 @@ function installMath(md, getConfig) {
   function render(tokens, index, options, env = {}) {
     const token = tokens[index],
       cfg = config();
-    env.inkpageMacros ||= { ...cfg.macros };
+    if (!env.inkpageMacros) {
+      env.inkpageMathCache = new Map();
+      env.inkpageMathRevision = 0;
+      env.inkpageMacros = new Proxy(
+        { ...cfg.macros },
+        {
+          set(target, name, value) {
+            target[name] = value;
+            env.inkpageMathRevision++;
+            env.inkpageMathCache.clear();
+            return true;
+          },
+          deleteProperty(target, name) {
+            delete target[name];
+            env.inkpageMathRevision++;
+            env.inkpageMathCache.clear();
+            return true;
+          },
+        },
+      );
+    }
     const line =
       (token.map?.[0] ?? token.meta?.inkpageLine ?? 0) +
       1 +
       (env.inkpageLineOffset || 0);
-    let result;
+    const rawSource =
+      token.meta?.inkpageSource ||
+      (token.meta?.inkpageOpen || token.markup || "") +
+        token.content +
+        (token.meta?.inkpageClose || token.markup || "") +
+        (token.info ? ` (${token.info})` : "");
+    let result, entry, fallback;
     try {
-      result = katex.renderToString(token.content, {
-        displayMode: token.meta?.inkpageDisplay,
-        macros: env.inkpageMacros,
-        throwOnError: true,
-        strict: "warn",
-        trust: false,
-        maxExpand: 1000,
-        output: "htmlAndMathml",
-      });
-      result = result.replace(
-        /class="([^"]*)"/g,
-        (_, classes) =>
-          `class="${classes
-            .split(/\s+/)
-            .map((c) => c.replace(/^katex/, "inkpage-katex"))
-            .join(" ")}"`,
-      );
+      const key = `${Boolean(token.meta?.inkpageDisplay)}:${token.content}`;
+      entry = env.inkpageMathCache.get(key);
+      if (entry === undefined) {
+        const revision = env.inkpageMathRevision;
+        const deferred = Boolean(env.inkpageDeferMath && env.inkpageTrusted);
+        const macros = deferred ? { ...env.inkpageMacros } : undefined;
+        const katexOptions = {
+          displayMode: token.meta?.inkpageDisplay,
+          macros: env.inkpageMacros,
+          throwOnError: true,
+          strict: "warn",
+          trust: false,
+          maxExpand: 1000,
+          output: deferred ? "mathml" : "htmlAndMathml",
+        };
+        entry = {
+          result: mathClasses(
+            katex.renderToString(token.content, katexOptions),
+          ),
+        };
+        if (deferred) {
+          let expanded;
+          // MathML validates syntax and applies definitions in source order.
+          // The larger visual HTML is needed only when this formula is shown.
+          entry.expand = () =>
+            (expanded ??= mathClasses(
+              katex.renderToString(token.content, {
+                ...katexOptions,
+                macros: { ...macros },
+                output: "htmlAndMathml",
+              }),
+            ));
+        }
+        // Definitions can change later formulas. Cache only a render that did
+        // not mutate the document's macro namespace.
+        if (revision === env.inkpageMathRevision)
+          env.inkpageMathCache.set(key, entry);
+      }
+      result = entry.result;
     } catch (error) {
       (env.inkpageMathErrors ||= []).push({
         line,
         message: error.message,
         source: token.content,
+        fallbackToCode: cfg.fallbackToCode,
       });
-      result = `<code class="inkpage-math-error" title="${escape(error.message)}">${escape(token.meta?.inkpageOpen || token.markup || "")}${escape(token.content)}${escape(token.meta?.inkpageClose || token.markup || "")}</code><span class="inkpage-math-error-message">${escape(t("Math error · line {0}: {1}", line, error.message))}</span>`;
+      if (cfg.fallbackToCode) {
+        const code = `<code class="inkpage-math-fallback" data-inkpage-line="${line}" title="${escape(error.message)}">${escape(rawSource)}</code>`;
+        fallback = token.meta?.inkpageDisplay
+          ? `<pre class="inkpage-math-fallback">${code}</pre>`
+          : code;
+        result = fallback;
+      } else {
+        result = `<code class="inkpage-math-error" title="${escape(error.message)}">${escape(token.meta?.inkpageOpen || token.markup || "")}${escape(token.content)}${escape(token.meta?.inkpageClose || token.markup || "")}</code><span class="inkpage-math-error-message">${escape(t("Math error - line {0}: {1}", line, error.message))}</span>`;
+      }
     }
     const tag = token.block ? "div" : "span";
     const number = token.info
       ? `<span class="inkpage-equation-number">(${escape(token.info)})</span>`
       : "";
-    const html = `<${tag} class="inkpage-math${token.meta?.inkpageDisplay ? " inkpage-math-display" : ""}" data-inkpage-line="${line}"><span class="inkpage-equation-content">${result}</span>${number}</${tag}>`;
+    const sourceAttribute = cfg.fallbackToCode
+      ? ` data-inkpage-source="${escape(rawSource)}"`
+      : "";
+    const before = `<${tag} class="inkpage-math${token.meta?.inkpageDisplay ? " inkpage-math-display" : ""}" data-inkpage-line="${line}"${sourceAttribute}><span class="inkpage-equation-content">`;
+    const after = `</span>${number}</${tag}>`;
+    const html =
+      fallback ||
+      (entry?.expand
+        ? {
+            length: before.length + result.length * 6 + after.length,
+            toString: () => before + entry.expand() + after,
+          }
+        : before + result + after);
     if (env.inkpageTrusted) {
       const key = "INKPAGEMATH" + crypto.randomBytes(20).toString("hex");
       env.inkpageTrusted.set(key, html);
+      env.inkpageIndexMath?.(key, result, fallback ? "" : token.info);
       return key;
     }
-    return html;
+    return String(html);
   }
   for (const mode of MODES)
     for (const kind of ["inline", "block"])
@@ -122,14 +203,39 @@ function installMath(md, getConfig) {
           name,
           rex: new RegExp(template.rex.source, template.rex.flags),
         };
+        if (
+          kind === "inline" &&
+          template.tag === "$" &&
+          ["dollars", "julia"].includes(mode)
+        )
+          rule.rex = /\$(?!\s*\$)((?:\\[^\r\n]|[^\\$\r\n])+?)\$/gy;
         const parser =
           kind === "inline" ? texmath.inline(rule) : texmath.block(rule);
         const wrapped = (state, ...args) => {
           const cfg = config();
           if (!cfg.enabled || !cfg.delimiters.includes(mode)) return false;
           rule.outerSpace = cfg.outerspace;
-          const offset = state.pos;
+          const offset =
+            kind === "inline"
+              ? state.pos
+              : state.bMarks[args[0]] + state.tShift[args[0]];
           const length = state.tokens.length;
+          if (
+            kind === "inline" &&
+            rule.tag === "$" &&
+            /\d/.test(state.src[offset + 1] || "")
+          ) {
+            rule.rex.lastIndex = offset;
+            const body = rule.rex.exec(state.src)?.[1] || "";
+            // A numeric amount followed by prose should not consume the next
+            // formula's opening dollar as its own closing delimiter.
+            if (
+              /^\d[\s\S]*\s[A-Za-z]{2,}/.test(body) &&
+              !/[=+*/^_<>-]|\\[A-Za-z]/.test(body)
+            ) {
+              return false;
+            }
+          }
           const matched = parser(state, ...args);
           if (matched && state.tokens.length > length) {
             const t = state.tokens.at(-1);
@@ -139,6 +245,8 @@ function installMath(md, getConfig) {
               ...t.meta,
               inkpageDisplay: kind === "block" || Boolean(template.displayMode),
               inkpageOffset: offset,
+              inkpageEnd: state.pos,
+              inkpageSource: state.src.slice(offset, rule.rex.lastIndex),
               inkpageOpen: rule.tag,
               inkpageClose:
                 mode === "brackets"
@@ -187,11 +295,14 @@ function installMath(md, getConfig) {
 }
 
 function mathErrors(env) {
-  if (env.inkpageMathErrors?.length)
+  const errors = (env.inkpageMathErrors || []).filter(
+    (error) => !error.fallbackToCode,
+  );
+  if (errors.length)
     throw new Error(
       t(
         "Math parsing failed: {0}",
-        env.inkpageMathErrors
+        errors
           .slice(0, 8)
           .map((e) => t("Line {0}: {1}", e.line, e.message))
           .join("; "),

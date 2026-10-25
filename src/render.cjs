@@ -156,7 +156,9 @@ function sanitizeRenderedHtml(html, preview = false) {
         "role",
         "aria-label",
         "aria-hidden",
-        ...(preview ? ["data-pmp-line", "data-pmp-end", "data-pmp-key"] : []),
+        ...(preview
+          ? ["data-pmp-line", "data-pmp-end", "data-pmp-key", "data-pmp-kind"]
+          : []),
       ],
       a: ["href", "name", "target", "rel"],
       img: ["src", "alt", "title", "width", "height"],
@@ -283,13 +285,13 @@ async function embedImages(html, input) {
             bytes = Buffer.from(await input.readAsset(uri.href));
           } catch (error) {
             throw new Error(
-              t("Could not read local image “{0}”: {1}", src, error.message),
+              t('Could not read local image "{0}": {1}', src, error.message),
             );
           }
           checkAbort(input.signal);
           if (bytes.length > 25 * 1024 * 1024)
             throw new Error(
-              t("Image “{0}” exceeds 25 MB. Resize it before exporting.", src),
+              t('Image "{0}" exceeds 25 MB. Resize it before exporting.', src),
             );
           return `data:${imageMime(bytes, decodeURIComponent(uri.pathname))};base64,${bytes.toString("base64")}`;
         })(),

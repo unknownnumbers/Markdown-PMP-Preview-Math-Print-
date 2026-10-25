@@ -96,7 +96,7 @@ function layoutCss(input, format, snapshot) {
     ? `color:${snapshot.colors["--vscode-editor-foreground"] || "#333"}!important;background:${snapshot.colors["--vscode-editor-background"] || "#fff"}!important;`
     : "";
   return `@page{${snapshot ? `background:${snapshot.colors["--vscode-editor-background"] || "#fff"};` : ""}size:${o.width}mm ${o.height}mm;margin:${m.top}mm ${m.right}mm ${m.bottom}mm ${m.left}mm}
-  @media print{html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact;${printColors}}html body{font-size:${o.fontSize}pt!important;padding:0!important;margin:0!important;max-width:none!important;width:auto!important}h1,h2,h3,h4,h5,h6{break-after:avoid}thead{display:table-header-group}tr,img,.inkpage-math-display{break-inside:avoid}}
+  @media print{html,body{-webkit-print-color-adjust:exact;print-color-adjust:exact;${printColors}}html body{font-size:${o.fontSize}pt!important;padding:0!important;margin:0!important;max-width:none!important;width:auto!important}code,pre{font-variant-ligatures:none;font-feature-settings:"liga" 0,"calt" 0;line-break:anywhere}h1,h2,h3,h4,h5,h6{break-after:avoid}thead{display:table-header-group}tr,img,.inkpage-math-display{break-inside:avoid}body .markdown-body :is(h1,h2,h3,h4,h5,h6)+table tbody>tr:first-child{break-inside:auto;page-break-inside:auto}}
   ${["png", "jpeg"].includes(format) ? `html body{width:${o.imageWidth}px;max-width:${o.imageWidth}px}` : ""}`;
 }
 const escape = (x) =>
@@ -115,6 +115,6 @@ function headerTemplate(items, title, color = "#666") {
         ? escape(new Date().toLocaleDateString("sv-SE"))
         : '<span class="pageNumber"></span> / <span class="totalPages"></span>',
   );
-  return `<div style="width:100%;padding:0 20px;box-sizing:border-box;text-align:center;font:9px Arial,sans-serif;color:${escape(color)}">${pieces.join(" · ") || "<span></span>"}</div>`;
+  return `<div style="width:100%;padding:0 20px;box-sizing:border-box;text-align:center;font:9px Arial,sans-serif;color:${escape(color)}">${pieces.join(" - ") || "<span></span>"}</div>`;
 }
 module.exports = { normalizeExport, layoutCss, headerTemplate, PAPERS };

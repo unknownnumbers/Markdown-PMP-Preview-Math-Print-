@@ -110,6 +110,48 @@ test("Document-wide references, unique headings and math macros survive chunk bo
   assert.doesNotMatch(full, /inkpage-math-error/);
 });
 
+test("Long mathematical table cells remain complete while invisible width samples stay small", () => {
+  const content = Array.from({ length: 220 }, (_, i) => `cell${i} $x^2$`).join(
+    "; ",
+  );
+  const model = renderLargeDocument(
+    `| Name | Content |\n|---|---|\n| First | ${content} |\n| Last | end |`,
+    { ...options, math: { enabled: true } },
+  );
+  assert.ok(model.tables.length);
+  assert.ok(model.tables.every((sample) => sample.length < 4000));
+  const output = model.chunks.map((chunk) => chunk.html).join("");
+  assert.equal(nodes(output, "tr").length, 3);
+  assert.equal((output.match(/class="inkpage-math"/g) || []).length, 220);
+  assert.doesNotMatch(output, /INKPAGEMATH/);
+  assert.equal(new DocumentSearch(model, "cell219").total, 1);
+  assert.equal(new DocumentSearch(model, "x2").total, 220);
+});
+
+test("Deferred formulas use the macro definitions in effect at their own source position", () => {
+  const model = renderLargeDocument(
+    String.raw`$\gdef\current{x}$
+
+$\current$
+
+$\gdef\current{y}$
+
+$\current$
+
+$\missingCommand$`,
+    { ...options, math: { enabled: true } },
+  );
+  const output = model.chunks.map((chunk) => chunk.html).join("");
+  const formulas = nodes(output, "span").filter(
+    (node) => node.attribs.class === "inkpage-math",
+  );
+  assert.match(require("dom-serializer").default(formulas[1]), /<mi>x<\/mi>/);
+  assert.match(require("dom-serializer").default(formulas[3]), /<mi>y<\/mi>/);
+  assert.match(output, /inkpage-math-fallback/);
+  assert.match(output, /data-inkpage-line="9"/);
+  assert.doesNotMatch(output, /INKPAGEMATH/);
+});
+
 test("Search covers unloaded chunks, uses literal queries and reports the correct source location", () => {
   const source =
     "- Ordinary text\n".repeat(2000) + "- Last: [A+B]? and [a+b]?\n";

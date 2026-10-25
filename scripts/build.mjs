@@ -52,6 +52,9 @@ for (const [id, { folder, pkg }] of [...packages].sort(([a], [b]) =>
   const licenseFiles = entries.filter((name) =>
     /^(?:license|licence|copying|notice)(?:[._-]|$)/i.test(name),
   );
+  // This release includes its MIT declaration in README rather than a LICENSE file.
+  if (!licenseFiles.length && pkg.name === "@pdf-lib/fontkit")
+    licenseFiles.push("README.md");
   if (!licenseFiles.length)
     throw new Error(`Missing license for bundled package ${id}`);
   const text = (

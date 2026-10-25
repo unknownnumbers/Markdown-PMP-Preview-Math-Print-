@@ -95,6 +95,6 @@ test("Custom language filenames follow the editor locale and preserve inserted b
   assert.equal(createTranslator("fr")("Export Settings"), "Export Settings");
   assert.equal(
     createTranslator("zh-TC")("Line {0}: {1}", 3, "\\frac{a}{b} and {0}"),
-    "第 3 行：\\frac{a}{b} and {0}",
+    "第 3 行: \\frac{a}{b} and {0}",
   );
 });

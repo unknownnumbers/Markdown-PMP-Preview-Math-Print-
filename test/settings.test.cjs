@@ -5,6 +5,7 @@ const {
   SETTINGS_SECTION,
   getSettings,
   affectsSettings,
+  getPreviewMenuSuppression,
 } = require("../src/settings.cjs");
 const properties =
   require("../package.json").contributes.configuration.properties;
@@ -52,6 +53,30 @@ test("Only Markdown-PMP settings are contributed, with the original defaults and
   assert.equal(properties["Markdown-PMP.largePreview.enabled"].default, true);
   assert.equal(properties["Markdown-PMP.largePreview.enabled"].scope, "window");
   assert.equal(
+    properties["Markdown-PMP.preview.usePmpForAllFiles"].default,
+    false,
+  );
+  assert.equal(
+    properties["Markdown-PMP.preview.usePmpForAllFiles"].scope,
+    "window",
+  );
+  assert.equal(
+    properties["Markdown-PMP.nativePreview.suppressAltMenus"].default,
+    true,
+  );
+  assert.equal(
+    properties["Markdown-PMP.nativePreview.suppressAltMenus"].scope,
+    "window",
+  );
+  assert.equal(
+    properties["Markdown-PMP.preview.suppressAltMenus"].default,
+    true,
+  );
+  assert.equal(
+    properties["Markdown-PMP.preview.suppressAltMenus"].scope,
+    "window",
+  );
+  assert.equal(
     properties["Markdown-PMP.browserPath"].scope,
     "machine-overridable",
   );
@@ -72,6 +97,29 @@ test("Explicit legacy settings survive the new schema defaults", () => {
   assert.equal(settings.get("theme"), "purple");
   assert.equal(settings.get("math.preview.enabled"), false);
   assert.deepEqual(writes, []);
+});
+
+test("Preview menu switches are independent and retain an explicit value from the old Alt+S setting", () => {
+  const values = {
+    "preview.suppressAltMenus": { defaultValue: true },
+    "nativePreview.suppressAltMenus": { defaultValue: true },
+    "largePreview.suppressAltSMenu": { globalValue: false },
+  };
+  const vscode = {
+    workspace: {
+      getConfiguration: () => ({
+        inspect: (key) => values[key],
+        get: (key, fallback) =>
+          values[key]?.globalValue ?? values[key]?.defaultValue ?? fallback,
+      }),
+    },
+  };
+  assert.equal(getPreviewMenuSuppression(vscode), false);
+  assert.equal(getPreviewMenuSuppression(vscode, true), true);
+  values["preview.suppressAltMenus"].globalValue = true;
+  values["nativePreview.suppressAltMenus"].globalValue = false;
+  assert.equal(getPreviewMenuSuppression(vscode), true);
+  assert.equal(getPreviewMenuSuppression(vscode, true), false);
 });
 
 test("Explicit new values override legacy values even across scopes, including empty values", () => {

@@ -19,6 +19,7 @@ for (const file of await fs.readdir(path.join(katex, "dist/fonts")))
     path.join(assets, "math/fonts", file),
   );
 css += `\n.inkpage-math{font-size:1em;overflow-wrap:normal;color:inherit;max-width:100%} .inkpage-math .inkpage-katex{font-size:1em} .inkpage-math .inkpage-katex-display{margin:0} body .markdown-body .inkpage-math *{box-sizing:content-box} .inkpage-math svg{max-width:none!important} .inkpage-math-display{display:block;position:relative;text-align:center;overflow-x:auto;overflow-y:hidden;margin:1em 0;padding:4px 0} .inkpage-equation-content{display:inline-block;vertical-align:middle} .inkpage-math-display:has(.inkpage-equation-number){padding-right:3.5em;padding-left:3.5em} .inkpage-equation-number{position:absolute;right:0;top:50%;transform:translateY(-50%);font:inherit} .inkpage-math-error{color:#b42332!important;white-space:pre-wrap!important} .inkpage-math-error-message{display:block;color:#b42332;font:12px/1.5 sans-serif;text-align:left} @media print{.inkpage-math-display{overflow:visible;break-inside:avoid}}\n`;
+css += ".inkpage-math-fallback{white-space:pre-wrap!important;overflow-wrap:anywhere!important}\n";
 await fs.writeFile(path.join(assets, "math/math.css"), css);
 await fs.copyFile(
   path.join(katex, "LICENSE"),

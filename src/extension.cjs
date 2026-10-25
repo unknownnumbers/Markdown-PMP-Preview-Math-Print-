@@ -2,7 +2,12 @@
 const vscode = require("vscode"),
   path = require("node:path");
 const { t } = require("./i18n.cjs");
-const { getSettings, affectsSettings } = require("./settings.cjs");
+const {
+  getSettings,
+  affectsSettings,
+  getPreviewMenuSuppression,
+} = require("./settings.cjs");
+const { createPdfBesideCommand } = require("./editor-commands.cjs");
 const { PALETTES, normalizeOptions, variableCss } = require("./theme.cjs");
 const { normalizeMath } = require("./math.cjs");
 const { installPreview } = require("./preview.cjs");
@@ -33,6 +38,7 @@ function readMath(kind) {
     delimiters: c.get("math.delimiters", ["dollars", "brackets"]),
     macros: c.get("math.macros", {}),
     outerspace: c.get("math.outerspace", false),
+    fallbackToCode: c.get("math.fallbackToCode", true),
   });
 }
 function readExport(resource) {
@@ -88,6 +94,7 @@ function activate(context) {
     readOptions,
     readMath,
     log,
+    nativeSource: (tab) => previewRouter.sourceForTab(tab),
     onActivate(uri) {
       lastMarkdown = uri;
       updateStatus();
@@ -217,7 +224,7 @@ function activate(context) {
       const output = destinationArg?.scheme
         ? destinationArg
         : await vscode.window.showSaveDialog({
-            title: t("Export {0} · Markdown PMP", format.toUpperCase()),
+            title: t("Export {0} - Markdown PMP", format.toUpperCase()),
             defaultUri: vscode.Uri.joinPath(folder, `${title}.${format}`),
             filters: { [format.toUpperCase()]: [format] },
           });
@@ -252,7 +259,7 @@ function activate(context) {
                 ? await captureTheme(doc.uri, controller.signal)
                 : undefined;
             progress.report({
-              message: t("Preparing math, fonts and local images…"),
+              message: t("Preparing math, fonts and local images..."),
             });
             const rendered = await renderDocument({
               markdown: source,
@@ -262,8 +269,11 @@ function activate(context) {
               workspaceRoot: vscode.workspace
                 .getWorkspaceFolder(doc.uri)
                 ?.uri.toString(),
-              outputPath: output.scheme === "file" ? output.fsPath : undefined,
-              fontMode: "embedded",
+              outputPath:
+                format === "html" && output.scheme === "file"
+                  ? output.fsPath
+                  : undefined,
+              fontMode: format === "html" ? "embedded" : "file",
               title,
               snapshot,
               layoutCss: layoutCss(settings, format, snapshot),
@@ -280,6 +290,7 @@ function activate(context) {
             });
             warnings = rendered.warnings;
             const browser = {
+              extensionPath: context.extensionPath,
               browserPath:
                 config.get("browserPath", "") ||
                 config.get("pdf.browserPath", ""),
@@ -441,6 +452,20 @@ function activate(context) {
     status,
     vscode.commands.registerCommand("Markdown-PMP.selectTheme", selectTheme),
     vscode.commands.registerCommand(
+      "Markdown-PMP.togglePreview",
+      largePreview.toggle,
+    ),
+    vscode.commands.registerCommand(
+      "Markdown-PMP.forwardSearch",
+      largePreview.forwardSearch,
+    ),
+    vscode.commands.registerCommand(
+      "Markdown-PMP.exportPdfBeside",
+      createPdfBesideCommand(vscode, (source, output) =>
+        exportFile("pdf", source, output),
+      ),
+    ),
+    vscode.commands.registerCommand(
       "Markdown-PMP.exportWithSettings",
       withSettings,
     ),
@@ -509,6 +534,9 @@ function activate(context) {
         variableCss,
         (e) => log.appendLine(e.message),
         previewRouter.onNativeRender,
+        () =>
+          process.platform === "win32" &&
+          getPreviewMenuSuppression(vscode, true),
       );
     },
   };
